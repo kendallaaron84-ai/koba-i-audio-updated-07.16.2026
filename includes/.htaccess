@@ -1,0 +1,6 @@
+# KOBA-I SECURITY SHIELD
+# Prevents public access to the API Key and Logic Files
+<FilesMatch "\.(json|php)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
