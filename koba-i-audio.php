@@ -601,7 +601,6 @@ function koba_render_bloom_player_ui() {
     });
     </script>
     <?php
-    return ob_get_clean();
 }
 
 /* =========================================================================
