@@ -127,7 +127,10 @@
     top: 20px; 
     left: 50%;
     transform: translateX(-50%); /* Centers logo */
-    height: 22px; 
+    width: clamp(190px, 18vw, 250px);
+    height: auto;
+    max-width: 36vw;
+    object-fit: contain;
     z-index: 100; 
 }
 
@@ -148,6 +151,22 @@
     background-size: cover; background-position: center;
     border-radius: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); 
     margin-bottom: 35px; border: 1px solid rgba(255,255,255,0.1);
+}
+
+.k-cover-art-stage {
+    flex: 0 0 auto;
+    text-align: center;
+}
+
+.k-bloom-cover-img {
+    display: block;
+    width: 260px;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+    margin: 0 auto 35px;
 }
 
 /* 3. CONTROLS */
@@ -269,6 +288,244 @@
 .k-mini-title { color: white; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 10px; }
 .k-mini-scrubber { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; cursor: pointer; position: relative; }
 .k-mini-progress { height: 100%; background: var(--k-accent); width: 0%; border-radius: 3px; }
+
+/* =========================================================================
+   CATALOG BOOKSHELF
+   Desktop: responsive grid. Mobile: touch-first snap carousel.
+   ========================================================================= */
+.jubilee-bookshelf-track {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 240px));
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    padding: 20px 0;
+    box-sizing: border-box;
+}
+
+.jubilee-bookshelf-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 240px;
+    height: 450px;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    cursor: pointer;
+    outline: none;
+}
+
+.jubilee-bookshelf-card:focus-visible {
+    border-radius: 12px;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.5);
+}
+
+.jubilee-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.jubilee-card-inner.is-flipped {
+    transform: rotateY(180deg);
+}
+
+.jubilee-card-face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    background: #161b22;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.jubilee-card-back {
+    transform: rotateY(180deg);
+}
+
+.jubilee-card-cover {
+    width: 100%;
+    height: 210px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.jubilee-card-title {
+    min-height: 2.5em;
+    margin: 10px 0 4px;
+    overflow: hidden;
+    color: #ffffff;
+    font-family: sans-serif;
+    font-size: 1rem;
+    line-height: 1.25;
+}
+
+.jubilee-card-primary {
+    margin-top: auto;
+}
+
+.jubilee-card-back-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #ffffff;
+    font-family: sans-serif;
+}
+
+.jubilee-card-back-header h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.jubilee-card-synopsis {
+    flex: 1;
+    margin: 14px 0;
+    padding-right: 7px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    color: #e2e8f0;
+    font: 400 0.9rem/1.55 sans-serif;
+    scrollbar-width: thin;
+    scrollbar-color: #475569 transparent;
+}
+
+.jubilee-card-back-action {
+    flex: 0 0 auto;
+}
+
+.jubilee-product-price {
+    margin: 4px 0 12px;
+    color: #34d399;
+    font-family: sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.jubilee-catalog-action {
+    display: block;
+    padding: 10px;
+    border-radius: 6px;
+    border: 0 !important;
+    background: #f97316 !important;
+    color: #000000 !important;
+    font-family: sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+}
+
+.jubilee-catalog-action--buy {
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    box-shadow: 0 5px 12px rgba(249, 115, 22, 0.24);
+}
+
+#jubilee-catalog-root .jubilee-catalog-action--buy {
+    border-color: #f97316 !important;
+    background-color: #f97316 !important;
+    color: #000000 !important;
+}
+
+#jubilee-catalog-root .jubilee-catalog-action--buy:hover,
+#jubilee-catalog-root .jubilee-catalog-action--buy:focus-visible {
+    border-color: #ea580c !important;
+    background-color: #ea580c !important;
+    color: #000000 !important;
+}
+
+.jubilee-catalog-action--owned {
+    background: #10b981 !important;
+    color: #000000 !important;
+}
+
+.jubilee-catalog-action:hover,
+.jubilee-catalog-action:focus-visible {
+    background: #ea580c !important;
+    color: #000000 !important;
+}
+
+.jubilee-catalog-action--owned:hover,
+.jubilee-catalog-action--owned:focus-visible {
+    background: #059669 !important;
+    color: #000000 !important;
+}
+
+.jubilee-catalog-action:focus-visible {
+    outline: 3px solid rgba(249, 115, 22, 0.38);
+    outline-offset: 2px;
+}
+
+.already-purchased-link {
+    display: block;
+    margin-top: 9px;
+    color: #94a3b8;
+    font: 500 0.78rem/1.35 sans-serif;
+    text-align: center;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.already-purchased-link:hover,
+.already-purchased-link:focus-visible {
+    color: #cbd5e1;
+}
+
+.jubilee-purchase-unavailable {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    border-radius: 10px;
+    background: rgba(120, 53, 15, 0.28);
+    color: #fde68a;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    .jubilee-bookshelf-track {
+        display: flex;
+        justify-content: flex-start;
+        gap: 16px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        scroll-padding-inline: 16px;
+        overscroll-behavior-inline: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 20px 16px;
+    }
+
+    .jubilee-bookshelf-track::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+
+    .jubilee-bookshelf-card {
+        flex: 0 0 min(78vw, 240px);
+        width: min(78vw, 240px);
+        min-width: min(78vw, 240px);
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
+}
 
 /* =========================================================================
    6. READING MODE (Sovereign Portrait Canvas)
@@ -489,6 +746,13 @@
 
 /* MOBILE LAYOUT CONTENT FLOW RULES */
 @media (max-width: 900px) {
+    .k-bloom-logo {
+        top: max(10px, env(safe-area-inset-top));
+        width: min(24vw, 130px);
+        height: auto;
+        max-width: none;
+    }
+
     .k-bloom-interface { 
         grid-template-columns: 1fr; 
         grid-template-rows: 1fr auto; 
@@ -502,8 +766,55 @@
     }
     .k-bloom-stage {
         padding: 15px;
-        padding-top: 55px; 
+        padding-top: calc(76px + env(safe-area-inset-top));
         justify-content: flex-start;
+    }
+
+    .k-bloom-cover-img {
+        width: min(48vw, 25vh, 220px);
+        height: min(48vw, 25vh, 220px);
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 900px) and (max-height: 600px) {
+    .k-bloom-logo {
+        width: min(22vw, 120px);
+        height: auto;
+        max-width: none;
+    }
+
+    .k-bloom-stage {
+        padding-top: calc(58px + env(safe-area-inset-top));
+    }
+
+    .k-bloom-cover-img {
+        width: min(42vw, 22vh, 180px);
+        height: min(42vw, 22vh, 180px);
+    }
+}
+
+/* KOBA-I wordmark: compact, centered, and secondary to the cover artwork. */
+.k-bloom-logo,
+.koba-player-logo,
+.bloom-header-logo img,
+#jubilee-bloom-root img[src*="koba-logo"],
+#koba-bloom-root img[src*="koba-logo"] {
+    width: auto !important;
+    max-width: 140px !important;
+    height: auto !important;
+    object-fit: contain !important;
+    margin: 0 auto 12px !important;
+    display: block !important;
+}
+
+@media (max-width: 640px) {
+    .k-bloom-logo,
+    .koba-player-logo,
+    .bloom-header-logo img,
+    #jubilee-bloom-root img[src*="koba-logo"],
+    #koba-bloom-root img[src*="koba-logo"] {
+        max-width: 100px !important;
     }
 }
 
@@ -933,4 +1244,4 @@ body.single-koba_publication #left-area { width: 100% !important; max-width: 100
         line-height: 1.65 !important; /* Snugs lines slightly on compact phone displays */
         text-align: left !important;   /* Keeps portrait edge alignments clean */
     }
-}
+}

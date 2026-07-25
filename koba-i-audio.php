@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: KOBA-I Audio - Jubilee Edition
- * Version: 6.0.1
+ * Version: 6.0.2
  * Description: Tier-1 Audiobook & Video Player with E-Reader Cloud Studio and Buyer Matrix.
  * Author: Kendall Aaron
  * Text Domain: Jubilee Works
@@ -89,18 +89,60 @@ function koba_handle_license_submit() {
         wp_die('Unauthorized user context.');
     }
 
-    if (isset($_POST['koba_key'])) {
-        $new_key = sanitize_text_field($_POST['koba_key']);
-        update_option('koba_license_key', trim($new_key));
-        update_option('koba_license_status', 'inactive');
+    check_admin_referer('koba_activate_license', 'koba_license_nonce');
+
+    $new_key = isset($_POST['koba_key'])
+        ? strtoupper(trim(sanitize_text_field(wp_unslash($_POST['koba_key']))))
+        : '';
+
+    if (!preg_match('/^KOBA-AUDIO-[A-F0-9]{16}$/', $new_key)) {
+        wp_safe_redirect(admin_url('admin.php?page=koba-license&license_error=invalid_key'));
+        exit;
     }
 
-    wp_redirect(admin_url('admin.php?page=koba-license&settings-updated=true'));
+    $dashboard_url = rtrim(koba_get_dashboard_url(), '/');
+    $response = wp_remote_post($dashboard_url . '/api/verify-license', array(
+        'timeout' => 20,
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'X-Studio-Key' => $new_key,
+        ),
+        'body' => wp_json_encode(array('domain' => home_url('/'))),
+    ));
+
+    if (is_wp_error($response)) {
+        update_option('koba_license_status', 'inactive');
+        update_option('koba_license_last_error', $response->get_error_message());
+        wp_safe_redirect(admin_url('admin.php?page=koba-license&license_error=connection'));
+        exit;
+    }
+
+    $status_code = wp_remote_retrieve_response_code($response);
+    $payload = json_decode(wp_remote_retrieve_body($response), true);
+    if ($status_code !== 200 || !is_array($payload) || empty($payload['authorized'])) {
+        update_option('koba_license_status', 'inactive');
+        update_option(
+            'koba_license_last_error',
+            is_array($payload) && !empty($payload['error'])
+                ? sanitize_text_field($payload['error'])
+                : 'StudioKey verification failed.'
+        );
+        wp_safe_redirect(admin_url('admin.php?page=koba-license&license_error=rejected'));
+        exit;
+    }
+
+    update_option('koba_license_key', $new_key);
+    update_option('koba_license_status', 'active');
+    update_option('koba_license_capabilities', isset($payload['entitlements']) && is_array($payload['entitlements']) ? array_map('sanitize_text_field', $payload['entitlements']) : array());
+    update_option('koba_license_associated_website', esc_url_raw($payload['associatedWebsite'] ?? home_url('/')));
+    delete_option('koba_license_last_error');
+
+    wp_safe_redirect(admin_url('admin.php?page=koba-license&success=true'));
     exit;
 }
 
 // 3. REGISTER POST TYPE
-add_action('init', function() {
+function koba_register_publication_post_type() {
     register_post_type('koba_publication', [
         'labels'      => ['name' => 'Publications', 'singular_name' => 'Publication', 'add_new_item' => 'Add New Audiobook'],
         'public'      => true, 
@@ -113,7 +155,25 @@ add_action('init', function() {
         'rewrite'     => array('slug' => 'koba_publication', 'with_front' => false),
         'query_var'   => true
     ]);
-});
+}
+add_action('init', 'koba_register_publication_post_type');
+
+function koba_activate_audio_plugin() {
+    koba_register_publication_post_type();
+    flush_rewrite_rules(false);
+    update_option('koba_publication_rewrite_schema', '1');
+}
+register_activation_hook(__FILE__, 'koba_activate_audio_plugin');
+
+function koba_maybe_refresh_publication_rewrites() {
+    if (get_option('koba_publication_rewrite_schema') === '1') {
+        return;
+    }
+
+    flush_rewrite_rules(false);
+    update_option('koba_publication_rewrite_schema', '1');
+}
+add_action('init', 'koba_maybe_refresh_publication_rewrites', 99);
 
 /* =========================================================================
     🤖 AUTONOMOUS AGENT ENDPOINT: /wp-json/kobai/v1/publish-vault
@@ -214,7 +274,10 @@ function koba_agent_create_vault_page($request) {
     }
 
     $existing_page = get_page_by_path($book_slug, OBJECT, 'page');
-    $page_content = '[koba_bloom_player]';
+    $page_content = sprintf(
+        '[koba_bloom_player asset="%s"]',
+        esc_attr($asset_key)
+    );
 
     $page_data = array(
         'post_title'   => $book_title,
@@ -254,19 +317,13 @@ function koba_agent_create_vault_page($request) {
 ========================================================================= */
 if (!function_exists('koba_get_dashboard_url')) {
     function koba_get_dashboard_url() {
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-        $referer = $_SERVER['HTTP_REFERER'] ?? '';
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        
-        if (strpos($origin, 'ngrok-free.dev') !== false || strpos($referer, 'ngrok-free.dev') !== false || strpos($host, 'ngrok-free.dev') !== false) {
-            return 'https://barbecue-scuff-scale.ngrok-free.dev';
+        if (defined('KOBA_DASHBOARD_URL')) {
+            $configured_url = esc_url_raw((string) KOBA_DASHBOARD_URL);
+            if (!empty($configured_url)) {
+                return rtrim($configured_url, '/');
+            }
         }
 
-        $port = '3000';
-        if (strpos($origin, 'localhost') !== false || strpos($referer, 'localhost') !== false || strpos($host, 'localhost') !== false || strpos($host, 'local') !== false) {
-            return "http://localhost:{$port}";
-        }
-        
         return 'https://dashboard.koba-i.com';
     }
 }
@@ -329,7 +386,8 @@ function koba_render_license_page() {
 
     echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
     echo '<input type="hidden" name="action" value="koba_activate_license">';
-    echo '<input type="text" name="koba_key" value="' . esc_attr($current_key) . '" placeholder="JUBI-XXXX-XXXX-XXXX" style="width: 100%; padding: 10px; margin-bottom: 15px; font-family: monospace;" required>';
+    wp_nonce_field('koba_activate_license', 'koba_license_nonce');
+    echo '<input type="text" name="koba_key" value="' . esc_attr($current_key) . '" placeholder="KOBA-AUDIO-XXXXXXXXXXXXXXXX" style="width: 100%; padding: 10px; margin-bottom: 15px; font-family: monospace;" required>';
     echo '<button type="submit" class="button button-primary button-large" style="width: 100%;">' . ($status === 'active' ? 'Update License Key' : 'Verify & Activate') . '</button>';
     echo '</form>';
     echo '</div>';
@@ -338,6 +396,10 @@ function koba_render_license_page() {
 add_action('admin_notices', function() {
     if (isset($_GET['page']) && $_GET['page'] === 'koba-license' && isset($_GET['success']) && $_GET['success'] === 'true') {
         echo '<div class="notice notice-success is-dismissible"><p>🎉 Jubilee Studio activated successfully! Your domain is now securely locked.</p></div>';
+    }
+    if (isset($_GET['page']) && $_GET['page'] === 'koba-license' && isset($_GET['license_error'])) {
+        $message = get_option('koba_license_last_error', 'StudioKey verification failed. Please check the key and try again.');
+        echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($message) . '</p></div>';
     }
 });
 
@@ -400,6 +462,9 @@ function koba_load_vault_assets() {
 
     $dashboard_url =
         koba_get_dashboard_url();
+    $studio_key = sanitize_text_field(
+        get_option('koba_license_key', '')
+    );
 
     $current_user =
         wp_get_current_user();
@@ -436,6 +501,13 @@ function koba_load_vault_assets() {
                 $dashboard_url .
                 '/api/checkout',
 
+            'pluginUrl' =>
+                KOBA_IA_URL,
+
+            'logoUrl' =>
+                KOBA_IA_URL .
+                'assets/koba-logo-text-transparent.png',
+
             'userPhone' =>
                 sanitize_text_field(
                     $user_phone
@@ -443,6 +515,9 @@ function koba_load_vault_assets() {
 
             'readerUrl' =>
                 home_url('/bookshelf/'),
+
+            'studioKey' =>
+                $studio_key,
         )
     );
 }
@@ -490,14 +565,14 @@ function koba_render_bloom_player_shortcode(
                 padding:20px;
                 text-align:center;
             ">
-                Missing audiobook asset key.
+                Missing publication asset key.
             </div>
         ';
     }
 
     ob_start();
 
-    koba_render_bloom_player_ui(
+    koba_render_sovereign_player_engine(
         $book_id,
         $asset_key
     );
@@ -507,16 +582,24 @@ function koba_render_bloom_player_shortcode(
 
 function render_jubilee_matrix_buyer_catalog($atts) {
     $args = shortcode_atts(array('author' => '', 'type' => ''), $atts);
-    if (empty($args['author'])) return '<p style="color:#ef4444; font-weight:bold;">Error: Please specify an author attribute context.</p>';
+    $studio_key = sanitize_text_field(
+        get_option('koba_license_key', '')
+    );
+
+    if ($studio_key === '') {
+        return '<p role="alert" style="color:#ef4444; font-weight:bold;">KOBA-I Audio must be activated before the bookstore can load.</p>';
+    }
     
     return sprintf(
-        '<div id="jubilee-catalog-root" data-author="%s" data-type="%s" class="jubilee-matrix-loading">
+        '<div id="jubilee-catalog-root" data-author="%s" data-studio-key="%s" data-type="%s" class="jubilee-matrix-loading">
             <div class="jubilee-spinner-wrapper" style="text-align:center; padding: 40px 0;">
                 <div class="jubilee-spinner" style="display:inline-block; width:40px; height:40px; border:4px solid #333; border-top-color:#f97316; border-radius:50%%; animation: jSpin 1s linear infinite;"></div>
             </div>
          </div>
          <style>@keyframes jSpin { to { transform: rotate(360deg); } }</style>',
-        esc_attr($args['author']), esc_attr($args['type'])
+        esc_attr($args['author']),
+        esc_attr($studio_key),
+        esc_attr($args['type'])
     );
 }
 
@@ -728,10 +811,7 @@ function koba_render_bloom_player_ui($book_id, $asset_key = '') {
         data-api="<?php echo esc_url($dashboard_url . '/api/products/public'); ?>"
         style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"
     >
-        <div style="color: #64748b; font-family: system-ui, sans-serif; text-align: center;">
-            <span style="font-size:24px; display:inline-block; animation: spin 2s linear infinite;">💿</span><br><br>
-            Mounting Sovereign Audio Canvas Component Layers...
-        </div>
+        <div id="koba-bloom-root" style="width:100%; height:100%;"></div>
     </div>
     <?php
 }
@@ -788,8 +868,66 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                 box-shadow: 0 24px 80px rgba(0,0,0,.45) !important;
                 border-radius: 4px !important;
                 box-sizing: border-box !important;
-                overflow-y: auto !important;
+                overflow: hidden !important;
                 transition: background 0.25s ease, color 0.25s ease !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+            }
+            .koba-reader-paginated {
+                width: 100% !important;
+                height: 100% !important;
+                min-height: 0 !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                column-fill: auto !important;
+                column-gap: 0 !important;
+                scroll-behavior: smooth !important;
+                scroll-snap-type: x mandatory !important;
+                overscroll-behavior-x: contain !important;
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+                box-sizing: border-box !important;
+            }
+            .koba-reader-paginated::-webkit-scrollbar {
+                display: none !important;
+            }
+            .koba-reader-copy {
+                user-select: text !important;
+                -webkit-user-select: text !important;
+                cursor: text !important;
+            }
+            .koba-reader-highlight {
+                background: rgba(250, 204, 21, 0.52) !important;
+                color: inherit !important;
+                border-radius: 2px !important;
+                padding: 0 !important;
+            }
+            .koba-annotation-menu {
+                position: fixed !important;
+                z-index: 2147483646 !important;
+                display: none;
+                align-items: center;
+                gap: 6px;
+                padding: 6px;
+                border: 1px solid rgba(255,255,255,.2);
+                border-radius: 9px;
+                background: rgba(15,20,28,.98);
+                box-shadow: 0 16px 40px rgba(0,0,0,.4);
+                font-family: system-ui, sans-serif;
+            }
+            .koba-annotation-menu button {
+                border: 0;
+                border-radius: 6px;
+                padding: 8px 10px;
+                background: #1f2937;
+                color: #fff;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+            }
+            .koba-annotation-menu button:hover,
+            .koba-annotation-menu button:focus-visible {
+                background: #374151;
             }
             .koba-reader-backdrop {
                 position: absolute !important;
@@ -882,7 +1020,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                 <div
                     id="koba-ebook-canvas-root"
                     data-asset="<?php echo esc_attr($asset_key); ?>"
-                    data-api="<?php echo esc_url($base_api_url . '/api/products/public'); ?>"
+                    data-api="<?php echo esc_url($base_api_url . '/api/media/manifest'); ?>"
                     data-token-url="<?php echo esc_url($token_url); ?>"
                     data-nonce="<?php echo esc_attr($wp_nonce); ?>"
                     data-base-url="<?php echo esc_url($base_api_url); ?>"
@@ -910,19 +1048,78 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         const viewportCard = root.closest(".koba-reader-page");
         const stage = root.closest(".koba-reader-stage");
         const readerShell = root.closest(".koba-reader-shell");
+        const baseUrl = (root.dataset.baseUrl || "").replace(/\/$/, "");
 
-        if (!apiUrl || !assetKey || !container || !viewportCard || !stage || !readerShell) return;
+        if (!apiUrl || !baseUrl || !assetKey || !container || !viewportCard || !stage || !readerShell) return;
 
         const globalPrefKey = "koba_reader_preferences_v1";
         const progressKey = `koba_reader_progress_${assetKey}`;
+        const annotationKey = `koba_reader_annotations_${assetKey}`;
         const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         
         container.style.transition = reduceMotion ? "none" : "opacity 150ms ease";
 
         let readerPages = [];
         let currentIndex = 0;
+        let currentVisualPage = 0;
+        let currentVisualPageCount = 1;
         let isTransitioning = false;
         let hudIdleTimeout;
+        let annotationSelection = null;
+        let annotations = [];
+
+        try {
+            const savedAnnotations = JSON.parse(localStorage.getItem(annotationKey) || "[]");
+            annotations = Array.isArray(savedAnnotations) ? savedAnnotations : [];
+        } catch (error) {
+            annotations = [];
+        }
+
+        const readerTokenKey = `koba_reader_token_${assetKey}`;
+
+        async function requestAuthorizedPublication() {
+            const query = new URLSearchParams(window.location.search);
+            const checkoutSessionId = query.get("session_id") || "";
+            let readerToken = sessionStorage.getItem(readerTokenKey) || "";
+
+            if (checkoutSessionId) {
+                const completionResponse = await fetch(
+                    `${baseUrl}/api/checkout/listener-session/complete`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ assetKey, checkoutSessionId })
+                    }
+                );
+                const completion = await completionResponse.json().catch(() => ({}));
+                if (!completionResponse.ok || completion.success !== true || !completion.readerToken) {
+                    throw new Error(completion.error || "Unable to verify the completed Stripe purchase.");
+                }
+                readerToken = completion.readerToken;
+                sessionStorage.setItem(readerTokenKey, readerToken);
+
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.delete("session_id");
+                cleanUrl.searchParams.delete("status");
+                window.history.replaceState({}, document.title, `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
+            }
+
+            const headers = readerToken
+                ? { Authorization: `Bearer ${readerToken}` }
+                : {};
+            const response = await fetch(
+                `${apiUrl}?asset=${encodeURIComponent(assetKey)}`,
+                { headers }
+            );
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    sessionStorage.removeItem(readerTokenKey);
+                }
+                throw new Error(data?.error || "This publication requires verified access.");
+            }
+            return data;
+        }
 
         // 🏗️ HUD DOM CONSOLE ASSEMBLY
         const navTray = document.createElement("footer");
@@ -1017,8 +1214,27 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         const lineHeightRange = document.createElement("input"); lineHeightRange.type = "range"; lineHeightRange.min = "1.4"; lineHeightRange.max = "2.4"; lineHeightRange.step = "0.1"; lineHeightRange.value = "1.9"; lineHeightRange.style.cssText = rangeStyle;
         lineHeightGroup.appendChild(lineHeightRange);
 
-        settingsPanel.append(pageColorGroup, fontGroup, fontSizeGroup, lineHeightGroup, marginSelectGroup);
+        const savedPlacesGroup = createSettingGroup("Saved Highlights & Bookmarks");
+        savedPlacesGroup.style.gridColumn = "1 / -1";
+        const savedPlacesList = document.createElement("div");
+        savedPlacesList.style.cssText = "display:flex; gap:8px; overflow-x:auto; padding:2px 0 4px; scrollbar-width:thin;";
+        savedPlacesGroup.appendChild(savedPlacesList);
+
+        settingsPanel.append(pageColorGroup, fontGroup, fontSizeGroup, lineHeightGroup, marginSelectGroup, savedPlacesGroup);
         stage.append(navTray, settingsPanel);
+
+        const annotationMenu = document.createElement("div");
+        annotationMenu.className = "koba-annotation-menu";
+        annotationMenu.setAttribute("role", "toolbar");
+        annotationMenu.setAttribute("aria-label", "Reader annotation actions");
+        const highlightButton = document.createElement("button");
+        highlightButton.type = "button";
+        highlightButton.textContent = "Highlight";
+        const bookmarkButton = document.createElement("button");
+        bookmarkButton.type = "button";
+        bookmarkButton.textContent = "Save Bookmark";
+        annotationMenu.append(highlightButton, bookmarkButton);
+        readerShell.appendChild(annotationMenu);
 
         function hudHasFocus() {
             return (navTray.contains(document.activeElement) || settingsPanel.contains(document.activeElement));
@@ -1040,6 +1256,152 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             if (settingsPanel.hidden && !hudHasFocus()) { hudIdleTimeout = setTimeout(hideHUD, 3000); }
         }
 
+        function saveAnnotations() {
+            localStorage.setItem(annotationKey, JSON.stringify(annotations));
+            renderSavedPlaces();
+        }
+
+        function renderSavedPlaces() {
+            savedPlacesList.replaceChildren();
+            if (!annotations.length) {
+                const empty = document.createElement("span");
+                empty.textContent = "Select text while reading to save a highlight or bookmark.";
+                empty.style.cssText = "color:#94a3b8; font-size:12px; font-weight:500; padding:6px 0;";
+                savedPlacesList.appendChild(empty);
+                return;
+            }
+            annotations.forEach(annotation => {
+                const item = document.createElement("div");
+                item.style.cssText = "display:flex; align-items:center; flex:0 0 auto; border:1px solid #374151; border-radius:7px; overflow:hidden; background:#1f2937;";
+                const goButton = document.createElement("button");
+                goButton.type = "button";
+                const prefix = annotation.type === "highlight" ? "Highlight" : "Bookmark";
+                const excerpt = String(annotation.quote || annotation.label || "Saved place").replace(/\s+/g, " ").trim();
+                goButton.textContent = `${prefix}: ${excerpt.slice(0, 55)}${excerpt.length > 55 ? "…" : ""}`;
+                goButton.style.cssText = "border:0; background:transparent; color:#e2e8f0; padding:8px 10px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; text-align:left; font-size:11px; font-weight:600;";
+                goButton.addEventListener("click", () => {
+                    const destination = Number(annotation.sectionIndex);
+                    if (!Number.isInteger(destination) || destination < 0 || destination >= readerPages.length) return;
+                    currentIndex = destination;
+                    currentVisualPage = Math.max(0, Number(annotation.visualPage) || 0);
+                    renderPage();
+                });
+                const removeButton = document.createElement("button");
+                removeButton.type = "button";
+                removeButton.textContent = "×";
+                removeButton.setAttribute("aria-label", `Remove ${prefix.toLowerCase()}`);
+                removeButton.style.cssText = "border:0; border-left:1px solid #374151; background:transparent; color:#94a3b8; width:30px; align-self:stretch; cursor:pointer; font-size:16px;";
+                removeButton.addEventListener("click", () => {
+                    annotations = annotations.filter(itemValue => itemValue.id !== annotation.id);
+                    applyHighlights(Number(annotation.sectionIndex));
+                    saveAnnotations();
+                    measureActivePagination();
+                });
+                item.append(goButton, removeButton);
+                savedPlacesList.appendChild(item);
+            });
+        }
+
+        function applyHighlights(sectionIndex) {
+            const activeSection = readerPages[sectionIndex];
+            const body = activeSection?.node?.querySelector?.(".koba-reader-copy");
+            if (!body) return;
+            const sourceText = body.dataset.sourceText || body.textContent || "";
+            body.dataset.sourceText = sourceText;
+            body.replaceChildren();
+
+            const highlights = annotations
+                .filter(item => item.type === "highlight" && Number(item.sectionIndex) === sectionIndex)
+                .map(item => ({ ...item, start: Number(item.start), end: Number(item.end) }))
+                .filter(item => Number.isInteger(item.start) && Number.isInteger(item.end) && item.start >= 0 && item.end > item.start && item.end <= sourceText.length)
+                .sort((left, right) => left.start - right.start || left.end - right.end);
+
+            let cursor = 0;
+            highlights.forEach(highlight => {
+                if (highlight.start < cursor) return;
+                if (highlight.start > cursor) body.appendChild(document.createTextNode(sourceText.slice(cursor, highlight.start)));
+                const mark = document.createElement("mark");
+                mark.className = "koba-reader-highlight";
+                mark.dataset.annotationId = highlight.id;
+                mark.textContent = sourceText.slice(highlight.start, highlight.end);
+                body.appendChild(mark);
+                cursor = highlight.end;
+            });
+            if (cursor < sourceText.length) body.appendChild(document.createTextNode(sourceText.slice(cursor)));
+        }
+
+        function selectionOffset(body, node, offset) {
+            const range = document.createRange();
+            range.selectNodeContents(body);
+            range.setEnd(node, offset);
+            return range.toString().length;
+        }
+
+        function hideAnnotationMenu(clearSelection = false) {
+            annotationMenu.style.display = "none";
+            annotationSelection = null;
+            if (clearSelection) window.getSelection()?.removeAllRanges();
+        }
+
+        function captureAnnotationSelection() {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+                hideAnnotationMenu(false);
+                return;
+            }
+            const range = selection.getRangeAt(0);
+            const body = range.startContainer.nodeType === Node.ELEMENT_NODE
+                ? range.startContainer.closest?.(".koba-reader-copy")
+                : range.startContainer.parentElement?.closest(".koba-reader-copy");
+            if (!body || !container.contains(body) || !body.contains(range.endContainer)) {
+                hideAnnotationMenu(false);
+                return;
+            }
+            const start = selectionOffset(body, range.startContainer, range.startOffset);
+            const end = selectionOffset(body, range.endContainer, range.endOffset);
+            const normalizedStart = Math.min(start, end);
+            const normalizedEnd = Math.max(start, end);
+            const quote = selection.toString().replace(/\s+/g, " ").trim();
+            if (!quote || normalizedEnd <= normalizedStart) {
+                hideAnnotationMenu(false);
+                return;
+            }
+            annotationSelection = {
+                sectionIndex: currentIndex,
+                visualPage: currentVisualPage,
+                start: normalizedStart,
+                end: normalizedEnd,
+                quote,
+            };
+            const rect = range.getBoundingClientRect();
+            const left = Math.max(8, Math.min(window.innerWidth - 230, rect.left + (rect.width / 2) - 105));
+            const top = Math.max(8, rect.top - 52);
+            annotationMenu.style.left = `${left}px`;
+            annotationMenu.style.top = `${top}px`;
+            annotationMenu.style.display = "flex";
+        }
+
+        function commitAnnotation(type) {
+            if (!annotationSelection) return;
+            const selectionData = annotationSelection;
+            const id = window.crypto?.randomUUID?.() || `annotation_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+            annotations.push({
+                id,
+                type,
+                ...selectionData,
+                label: readerPages[currentIndex]?.label || "Saved place",
+                createdAt: new Date().toISOString(),
+            });
+            applyHighlights(currentIndex);
+            saveAnnotations();
+            hideAnnotationMenu(true);
+            measureActivePagination();
+        }
+
+        highlightButton.addEventListener("click", () => commitAnnotation("highlight"));
+        bookmarkButton.addEventListener("click", () => commitAnnotation("bookmark"));
+        renderSavedPlaces();
+
         function createCoverPage(book) {
             const page = document.createElement("section");
             page.style.cssText = "width:100%; height:100%; display:flex; align-items:center; justify-content:center; flex-direction:column; box-sizing:border-box; padding:10px 0;";
@@ -1057,7 +1419,8 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
         function createTextPage(titleValue, textValue, eyebrowValue = "") {
             const page = document.createElement("article");
-            page.style.cssText = "width:100%; min-height:100%; display:flex; flex-direction:column; box-sizing:border-box;";
+            page.className = "koba-reader-paginated";
+            page.style.cssText = "width:100%; height:100%; min-height:0; box-sizing:border-box;";
             if (eyebrowValue) {
                 const eyebrow = document.createElement("div"); eyebrow.textContent = eyebrowValue;
                 eyebrow.style.cssText = "width:min(100%, var(--koba-text-width)); margin:0 auto 10px; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color: var(--koba-text-color); font-family: var(--koba-reader-font); opacity:0.55;";
@@ -1065,9 +1428,81 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             }
             const heading = document.createElement("h3"); heading.textContent = titleValue || "Chapter";
             heading.style.cssText = "width:min(100%, var(--koba-text-width)); margin:0 auto 24px; color: var(--koba-text-color); font-family: var(--koba-reader-font); font-size:22px; font-weight:700; border-bottom:1px solid rgba(148,163,184,0.18); padding-bottom:12px; line-height:1.3;";
-            const body = document.createElement("div"); body.textContent = textValue || "This section contains no manuscript text.";
+            const body = document.createElement("div");
+            body.className = "koba-reader-copy";
+            body.textContent = textValue || "This section contains no manuscript text.";
+            body.dataset.sourceText = body.textContent;
             body.style.cssText = "width:min(100%, var(--koba-text-width)); margin:0 auto; text-align:left; white-space:pre-wrap; overflow-wrap:anywhere; color: var(--koba-text-color); font-family: var(--koba-reader-font); font-size: var(--koba-reader-size); line-height: var(--koba-reader-leading);";
             page.append(heading, body); return page;
+        }
+
+        function saveReaderProgress() {
+            localStorage.setItem(progressKey, JSON.stringify({
+                sectionIndex: currentIndex,
+                visualPage: currentVisualPage,
+            }));
+        }
+
+        function activePaginatedNode() {
+            const node = readerPages[currentIndex]?.node;
+            return node?.classList?.contains("koba-reader-paginated") ? node : null;
+        }
+
+        function scrollToCurrentVisualPage(behavior = "smooth") {
+            const paginatedNode = activePaginatedNode();
+            if (!paginatedNode) return;
+            const pageWidth = Math.max(1, paginatedNode.clientWidth);
+            paginatedNode.scrollTo({
+                left: currentVisualPage * pageWidth,
+                top: 0,
+                behavior: reduceMotion ? "auto" : behavior,
+            });
+        }
+
+        function measureActivePagination() {
+            if (!readerPages.length) return;
+            const paginatedNode = activePaginatedNode();
+            if (!paginatedNode) {
+                currentVisualPage = 0;
+                currentVisualPageCount = 1;
+                updateReaderControls();
+                saveReaderProgress();
+                return;
+            }
+            const pageWidth = Math.max(1, paginatedNode.clientWidth);
+            paginatedNode.style.columnWidth = `${pageWidth}px`;
+            paginatedNode.style.columnGap = "0px";
+            currentVisualPageCount = Math.max(1, Math.round(paginatedNode.scrollWidth / pageWidth));
+            currentVisualPage = Math.min(Math.max(0, currentVisualPage), currentVisualPageCount - 1);
+            scrollToCurrentVisualPage("auto");
+            updateReaderControls();
+            saveReaderProgress();
+        }
+
+        function bindActivePaginationEvents() {
+            const paginatedNode = activePaginatedNode();
+            if (!paginatedNode || paginatedNode.dataset.paginationBound === "true") return;
+            paginatedNode.dataset.paginationBound = "true";
+            const settleToNearestPage = () => {
+                const pageWidth = Math.max(1, paginatedNode.clientWidth);
+                currentVisualPage = Math.min(
+                    currentVisualPageCount - 1,
+                    Math.max(0, Math.round(paginatedNode.scrollLeft / pageWidth))
+                );
+                scrollToCurrentVisualPage("smooth");
+                updateReaderControls();
+                saveReaderProgress();
+            };
+            paginatedNode.addEventListener("scroll", () => {
+                window.clearTimeout(paginatedNode._kobaScrollTimer);
+                paginatedNode._kobaScrollTimer = window.setTimeout(settleToNearestPage, 100);
+                showHUD();
+            }, { passive: true });
+            paginatedNode.addEventListener("touchend", settleToNearestPage, { passive: true });
+            paginatedNode.addEventListener("pointerup", event => {
+                if (event.pointerType !== "touch") window.setTimeout(captureAnnotationSelection, 0);
+            });
+            paginatedNode.addEventListener("touchend", () => window.setTimeout(captureAnnotationSelection, 50), { passive: true });
         }
 
         async function renderPage() {
@@ -1080,14 +1515,11 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             }
 
             const activePage = readerPages[currentIndex];
+            applyHighlights(currentIndex);
             container.replaceChildren(activePage.node);
-            updateReaderControls();
-
-            const scrollPosKey = `koba_reader_scroll_${assetKey}_sec_${currentIndex}`;
-            const savedScroll = parseInt(localStorage.getItem(scrollPosKey), 10);
-            viewportCard.scrollTop = (!isNaN(savedScroll) && savedScroll > 0) ? savedScroll : 0;
-
-            localStorage.setItem(progressKey, String(currentIndex));
+            bindActivePaginationEvents();
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            measureActivePagination();
 
             if (!reduceMotion) {
                 requestAnimationFrame(() => { container.style.opacity = "1"; });
@@ -1099,11 +1531,21 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
         function updateReaderControls() {
             const activePage = readerPages[currentIndex];
-            const percent = readerPages.length <= 1 ? 100 : Math.round((currentIndex / (readerPages.length - 1)) * 100);
-            pageIndicator.textContent = `${activePage.label} • ${percent}%`;
+            if (!activePage) return;
+            const sectionProgress = currentIndex + (currentVisualPage / Math.max(1, currentVisualPageCount));
+            const isFinalPhysicalPage = currentIndex === readerPages.length - 1 && currentVisualPage >= currentVisualPageCount - 1;
+            const percent = isFinalPhysicalPage
+                ? 100
+                : readerPages.length <= 1
+                    ? 100
+                    : Math.min(99, Math.round((sectionProgress / readerPages.length) * 100));
+            const physicalPageLabel = currentVisualPageCount > 1
+                ? ` · Page ${currentVisualPage + 1} of ${currentVisualPageCount}`
+                : "";
+            pageIndicator.textContent = `${activePage.label}${physicalPageLabel} · ${percent}%`;
 
-            previousButton.disabled = currentIndex === 0;
-            nextButton.disabled = currentIndex === readerPages.length - 1;
+            previousButton.disabled = currentIndex === 0 && currentVisualPage === 0;
+            nextButton.disabled = currentIndex === readerPages.length - 1 && currentVisualPage >= currentVisualPageCount - 1;
 
             [previousButton, nextButton].forEach(button => {
                 button.style.opacity = button.disabled ? "0.3" : "1";
@@ -1125,13 +1567,29 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             }
         }
 
-        viewportCard.addEventListener("scroll", () => {
-            if (!isTransitioning && readerPages.length > 0) {
-                const scrollPosKey = `koba_reader_scroll_${assetKey}_sec_${currentIndex}`;
-                localStorage.setItem(scrollPosKey, viewportCard.scrollTop);
-                hideHUD(); 
+        ["copy", "cut", "contextmenu"].forEach(eventName => {
+            viewportCard.addEventListener(eventName, event => event.preventDefault());
+        });
+
+        viewportCard.addEventListener("dragstart", event => event.preventDefault());
+        document.addEventListener("pointerdown", event => {
+            if (!annotationMenu.contains(event.target) && !viewportCard.contains(event.target)) {
+                hideAnnotationMenu(false);
             }
         });
+
+        let resizeTimer;
+        window.addEventListener("resize", () => {
+            window.clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(measureActivePagination, 120);
+        }, { passive: true });
+        if ("ResizeObserver" in window) {
+            const readerResizeObserver = new ResizeObserver(() => {
+                window.clearTimeout(resizeTimer);
+                resizeTimer = window.setTimeout(measureActivePagination, 80);
+            });
+            readerResizeObserver.observe(container);
+        }
 
         readerShell.addEventListener("pointermove", showHUD, { passive: true });
         readerShell.addEventListener("pointerdown", showHUD, { passive: true });
@@ -1142,17 +1600,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         navTray.addEventListener("focusout", resetHUDTimeout);
         settingsPanel.addEventListener("focusout", resetHUDTimeout);
 
-        fetch(
-            `${apiUrl}?asset=${encodeURIComponent(assetKey)}`
-        )
-            .then(async response => {
-                let data;
-                try { data = await response.json(); } catch {
-                    throw new Error(`Catalog API returned invalid payload context.`);
-                }
-                if (!response.ok) throw new Error(data?.error || `Request failed.`);
-                return data;
-            })
+        requestAuthorizedPublication()
             .then(data => {
                 if (!data || data.success !== true || !Array.isArray(data.products)) throw new Error("Malformed data mapping matrix.");
 
@@ -1176,20 +1624,41 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                 });
 
                 loadReaderPreferences();
+                readerPages.forEach((page, pageIndex) => applyHighlights(pageIndex));
 
-                const savedIndex = parseInt(localStorage.getItem(progressKey), 10);
-                if (!isNaN(savedIndex) && savedIndex >= 0 && savedIndex < readerPages.length) {
-                    currentIndex = savedIndex;
-                } else {
-                    currentIndex = 0;
+                const savedProgressValue = localStorage.getItem(progressKey);
+                let savedSectionIndex = 0;
+                let savedVisualPage = 0;
+                try {
+                    const parsedProgress = JSON.parse(savedProgressValue || "null");
+                    if (parsedProgress && typeof parsedProgress === "object") {
+                        savedSectionIndex = Number(parsedProgress.sectionIndex) || 0;
+                        savedVisualPage = Number(parsedProgress.visualPage) || 0;
+                    } else if (Number.isInteger(parsedProgress)) {
+                        savedSectionIndex = parsedProgress;
+                    }
+                } catch (error) {
+                    const legacyIndex = parseInt(savedProgressValue, 10);
+                    if (!isNaN(legacyIndex)) savedSectionIndex = legacyIndex;
                 }
+                currentIndex = savedSectionIndex >= 0 && savedSectionIndex < readerPages.length
+                    ? savedSectionIndex
+                    : 0;
+                currentVisualPage = Math.max(0, savedVisualPage);
 
                 renderPage();
                 resetHUDTimeout();
             })
             .catch(error => {
                 console.error("[KOBA Core Engine Handshake Fault]:", error);
-                container.innerHTML = `<div style="color: #ef4444; padding-top: 100px; text-align: center;"><strong>Engine Connect Error</strong><br>${error.message}</div>`;
+                const failure = document.createElement("div");
+                failure.style.cssText = "color:#ef4444;padding-top:100px;text-align:center;";
+                const heading = document.createElement("strong");
+                heading.textContent = "Unable to open this publication";
+                const detail = document.createElement("p");
+                detail.textContent = error instanceof Error ? error.message : "Verified access is required.";
+                failure.append(heading, detail);
+                container.replaceChildren(failure);
             });
 
         function saveReaderPreferences() {
@@ -1232,6 +1701,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
             viewportCard.dataset.readerTheme = selectedBg === "#1f2933" ? "dark" : "light";
             if (save) saveReaderPreferences();
+            if (readerPages.length) window.setTimeout(measureActivePagination, 0);
         }
 
         async function toggleFullscreenMode() {
@@ -1246,6 +1716,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             fullscreenButton.setAttribute("aria-pressed", String(isFullscreen));
             fullscreenButton.style.background = isFullscreen ? "#3b82f6" : "#1f2937";
             viewportCard.style.height = isFullscreen ? "min(88vh, 920px)" : "min(78vh, 820px)";
+            window.setTimeout(measureActivePagination, 100);
             showHUD();
         });
 
@@ -1267,8 +1738,37 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         fontSizeRange.addEventListener("input", () => applyReaderPreferences(true));
         lineHeightRange.addEventListener("input", () => applyReaderPreferences(true));
 
-        function showNextPage() { if (currentIndex < readerPages.length - 1 && !isTransitioning) { currentIndex += 1; renderPage(); } }
-        function showPreviousPage() { if (currentIndex > 0 && !isTransitioning) { currentIndex -= 1; renderPage(); } }
+        function showNextPage() {
+            if (isTransitioning) return;
+            if (currentVisualPage < currentVisualPageCount - 1) {
+                currentVisualPage += 1;
+                scrollToCurrentVisualPage();
+                updateReaderControls();
+                saveReaderProgress();
+                return;
+            }
+            if (currentIndex < readerPages.length - 1) {
+                currentIndex += 1;
+                currentVisualPage = 0;
+                renderPage();
+            }
+        }
+
+        function showPreviousPage() {
+            if (isTransitioning) return;
+            if (currentVisualPage > 0) {
+                currentVisualPage -= 1;
+                scrollToCurrentVisualPage();
+                updateReaderControls();
+                saveReaderProgress();
+                return;
+            }
+            if (currentIndex > 0) {
+                currentIndex -= 1;
+                currentVisualPage = Number.MAX_SAFE_INTEGER;
+                renderPage();
+            }
+        }
 
         previousButton.addEventListener("click", showPreviousPage);
         nextButton.addEventListener("click", showNextPage);
@@ -1291,11 +1791,33 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 add_filter('template_include', 'koba_enforce_clean_application_canvas', 999);
 function koba_enforce_clean_application_canvas($template) {
     global $post;
-    if (!$post) return $template;
 
-    $is_root_bookshelf = is_page('bookshelf') || $post->post_name === 'bookshelf';
-    $has_query_asset   = isset($_GET['asset']) && !empty($_GET['asset']);
-    $is_single_cpt     = is_singular('koba_publication');
+    // Never replace admin, background, preview, feed, embed, archive, or
+    // secondary-query templates. The sovereign canvas owns only the main
+    // singular publication request or an explicit bookshelf asset request.
+    if (
+        !$post instanceof WP_Post
+        || is_admin()
+        || wp_doing_ajax()
+        || wp_doing_cron()
+        || is_preview()
+        || is_feed()
+        || is_embed()
+        || !is_main_query()
+    ) {
+        return $template;
+    }
+
+    $requested_asset = isset($_GET['asset'])
+        ? sanitize_key(wp_unslash($_GET['asset']))
+        : '';
+    $is_root_bookshelf = is_page('bookshelf')
+        && $post->post_type === 'page'
+        && get_queried_object_id() === (int) $post->ID;
+    $has_query_asset = $requested_asset !== '';
+    $is_single_cpt = is_singular('koba_publication')
+        && $post->post_type === 'koba_publication'
+        && get_queried_object_id() === (int) $post->ID;
 
     if ($is_root_bookshelf && !$has_query_asset) {
         return $template; 
@@ -1306,9 +1828,19 @@ function koba_enforce_clean_application_canvas($template) {
         $asset_key = koba_resolve_publication_asset_key(
             $book_id,
             $has_query_asset
-                ? wp_unslash($_GET['asset'])
+                ? $requested_asset
                 : ''
         );
+
+        $media_type = strtolower(
+            trim((string) get_post_meta($book_id, '_koba_media_type', true))
+        );
+        $is_audiobook = in_array(
+            $media_type,
+            array('audio', 'audiobook'),
+            true
+        ) || strpos($asset_key, 'abk_') === 0
+          || strpos($asset_key, 'aud_') === 0;
 
         wp_enqueue_style('bloom-style', plugin_dir_url(__FILE__) . 'assets/bloom-style.css', array(), time());
         wp_enqueue_script('jubilee-core-js', plugin_dir_url(__FILE__) . 'assets/jubilee-core.js', array(), time(), true);
@@ -1331,7 +1863,10 @@ function koba_enforce_clean_application_canvas($template) {
                 'dashboardUrl' => $dashboard_url,
                 'apiUrl'       => $dashboard_url . '/api/products/public',
                 'checkoutUrl'  => $dashboard_url . '/api/checkout',
+                'pluginUrl'    => KOBA_IA_URL,
+                'logoUrl'      => KOBA_IA_URL . 'assets/koba-logo-text-transparent.png',
                 'userPhone'    => sanitize_text_field($user_phone),
+                'studioKey'    => sanitize_text_field(get_option('koba_license_key', '')),
             )
         );
 
@@ -1355,14 +1890,31 @@ function koba_enforce_clean_application_canvas($template) {
         <body>
             <div id="koba-app-viewport">
                 <div id="koba-vault-door" class="koba-gate-screen">
+                    <?php if ($is_audiobook) : ?>
+                    <h2 style="color:#fff; margin-top:0;" id="vault-door-message">Sovereign Vault Gateway</h2>
+                    <p style="color:#8b949e; font-size:0.95rem; line-height:1.5;">Authentication required for this audio publication.</p>
+                    <p class="koba-compliance-notice" style="color:#6e7681; font-size:0.825rem; line-height:1.4; margin:0 auto 16px; max-width:340px;">
+                        We promise not to spam you, but we have to make sure you're a real person.
+                    </p>
+                    <div id="koba-sms-input-drawer">
+                        <input type="tel" id="koba-auth-phone-input" value="<?php echo esc_attr($user_phone); ?>" inputmode="tel" autocomplete="tel" placeholder="Enter 10-digit phone number" style="width:100%; box-sizing:border-box; padding:12px; background:#0d1117; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                        <button id="koba-auth-submit-trigger" class="koba-primary-btn" type="button">Send Access Code</button>
+                    </div>
+                    <div id="koba-sms-verification-drawer" style="display:none; margin-top:16px;">
+                        <input type="text" id="koba-auth-otp-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit PIN" style="width:100%; box-sizing:border-box; padding:12px; background:#0d1117; border:1px solid #30363d; color:#fff; border-radius:6px; text-align:center; letter-spacing:0.15em;">
+                        <button id="koba-otp-submit-trigger" class="koba-primary-btn" type="button" style="background:#10b981;">Verify Passcode</button>
+                    </div>
+                    <div id="koba-ui-error-region" role="alert" aria-live="polite" style="color:#ff7b72; margin-top:14px; font-size:0.875rem; font-weight:500; min-height:1.25rem; line-height:1.4;"></div>
+                    <?php else : ?>
                     <h2 style="color: #fff; margin-top: 0;" id="vault-door-message">Verifying Vault Access...</h2>
                     <p style="color: #8b949e; font-size: 0.95rem; line-height: 1.5;">Analyzing core framework signatures.</p>
                     <button id="vault-lock-btn" class="koba-primary-btn" style="display: none;">
                         Unlock Access Key
                     </button>
+                    <?php endif; ?>
                 </div>
 
-                <div id="bloom-player-wrapper" style="display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0;">
+                <div id="bloom-player-wrapper" style="display: <?php echo $is_audiobook ? 'none !important' : 'none'; ?>; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0;">
                     <?php
                     koba_render_sovereign_player_engine(
                         $book_id,
@@ -1396,7 +1948,7 @@ function koba_enforce_clean_application_canvas($template) {
                 );
             ?>
 
-            <?php if ($is_local_environment) : ?>
+            <?php if ($is_local_environment && !$is_audiobook) : ?>
             <script>
                 document.addEventListener("DOMContentLoaded", function () {
                     window.setTimeout(function () {

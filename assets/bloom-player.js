@@ -3,26 +3,48 @@
  * Version 6.0 - Mobile Lock Screen, Media Session API & Fullscreen
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // 1. INIT MAIN PLAYER
-    const mainRoot = document.getElementById('koba-bloom-root');
-    if (mainRoot && window.kobaData) {
-        initPlayer(mainRoot, window.kobaData, 'full');
+(function() {
+    function initializeExistingPlayers() {
+        // 1. INIT MAIN PLAYER
+        const mainRoot = document.getElementById('koba-bloom-root');
+        if (mainRoot && window.kobaData) {
+            initPlayer(mainRoot, window.kobaData, 'full');
+        }
+
+        // 2. INIT MINI PLAYERS
+        const miniRoots = document.querySelectorAll('.koba-mini-root');
+        miniRoots.forEach(root => {
+            if(root.dataset.config) {
+                const config = JSON.parse(root.dataset.config);
+                initPlayer(root, config, 'mini');
+            }
+        });
     }
 
-    // 2. INIT MINI PLAYERS
-    const miniRoots = document.querySelectorAll('.koba-mini-root');
-    miniRoots.forEach(root => {
-        if(root.dataset.config) {
-            const config = JSON.parse(root.dataset.config);
-            initPlayer(root, config, 'mini');
-        }
-    });
+    // Public hydration bridge used after the server verifies audiobook access.
+    window.initKobaBloomPlayer = function(root, data, mode = 'full') {
+        return initPlayer(root, data, mode);
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeExistingPlayers);
+    } else {
+        initializeExistingPlayers();
+    }
 
     function initPlayer(root, data, mode) {
-        const chapters = data.chapters || [];
-        if(chapters.length === 0) return;
+        const chapters = Array.isArray(data.chapters) ? data.chapters : [];
+        if (chapters.length === 0) {
+            root.innerHTML = `
+                <div class="koba-media-processing-state" role="status" aria-live="polite" style="min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px; box-sizing:border-box; background:#070a0f; color:#fff;">
+                    <div style="width:min(100%, 520px); padding:32px; box-sizing:border-box; text-align:center; background:#0d1117; border:1px solid #30363d; border-radius:12px; box-shadow:0 16px 40px rgba(0,0,0,0.45);">
+                        <h2 style="margin:0 0 12px; color:#fff; font-size:clamp(1.25rem, 4vw, 1.75rem);">Audio is being prepared</h2>
+                        <p style="margin:0; color:#c9d1d9; font-size:1rem; line-height:1.6;">Processing audio chapters. Please refresh the page in a moment or contact support.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
 
         // Add media-type classes for styling controls selectively
         if (data.mediaType === 'E-Book' || data.mediaType === 'Ebook' || data.mediaType === 'ebook' || data.mediaType === 'E-book') {
@@ -82,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         <!-- 🚀 Cover Art Stage Container -->
                         <div class="k-cover-art-stage" style="display: none;">
-                            <img src="${escapedCoverUrl}" class="k-bloom-cover-img" alt="Cover Art" style="width: 260px; height: 260px; object-fit: cover; border-radius: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); margin-bottom: 35px;">
+                            <img src="${escapedCoverUrl}" class="k-bloom-cover-img" alt="Cover Art">
                         </div>
 
                         <!-- 🚀 E-Book / Reader Surface Container -->
@@ -538,4 +560,4 @@ document.addEventListener('DOMContentLoaded', function() {
             scrubBar.style.accentColor = accentHex;
         }
     } // This closes applyBloomTheme()
-}); // This closes DOMContentLoaded
+})(); // This closes KOBA player runtime
