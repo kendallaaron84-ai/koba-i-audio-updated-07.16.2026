@@ -1,0 +1,11 @@
+#root {
+  --koba-gold: #F9B437;
+  --koba-dark: #0d1117;
+  color: white;
+  min-height: 500px;
+  font-family: sans-serif;
+}
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--koba-gold); border-radius: 10px; }
+.animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

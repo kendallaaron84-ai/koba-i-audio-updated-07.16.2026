@@ -1,0 +1,32 @@
+/* KOBA-I Brand Identity Styles */
+body { 
+    font-family: 'Inter', sans-serif; 
+    background-color: #1A2B56; /* Deep Navy */
+}
+/* Fix for the giant speaker/play icons */
+#root svg {
+    max-width: 100px;
+    height: auto;
+    margin: 0 auto;
+}
+
+#root .player-container {
+    max-width: 400px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+/* THE WIDTH FIX: Ensures the player fills the screen area */
+#root {
+    width: 100%;
+    max-width: 1200px; /* Standard wide-screen professional width */
+    margin: 0 auto;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Custom Scrollbar in Golden Yellow */
+.custom-scrollbar::-webkit-scrollbar { width: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #2d3748; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #F9B437; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #f6ad2a; }

@@ -1,0 +1,17 @@
+{
+    "name": "koba/audio-suite",
+    "description": "Professional AI Audio Suite",
+    "type": "wordpress-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kendall Aaron",
+            "email": "kendallaaron84@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "google/cloud-speech": "^2.2",
+        "google/cloud-storage": "^1.49"
+    }
+}
