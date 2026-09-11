@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: KOBA-I Audio - Jubilee Edition
- * Version: 6.1.0
- * Description: Version 6.1.0: Illustrated reflowable EPUB support with E-Reader Cloud Studio and Fullscreen Video.
+ * Version: 6.2.0
+ * Description: Version 6.2.0: Isolated illustrated-page presentation plus illustrated reflowable EPUB support.
  * Author: Kendall Aaron
  * Text Domain: Jubilee Works
  */
@@ -26,7 +26,7 @@ if ( class_exists( 'KobaAudioUpdater' ) ) {
 }
 
 // 1. CONSTANTS
-define( 'KOBA_IA_VERSION', '6.1.0' );
+define( 'KOBA_IA_VERSION', '6.2.0' );
 define( 'KOBA_IA_PATH', plugin_dir_path( __FILE__ ) );
 define( 'KOBA_IA_URL', plugin_dir_url( __FILE__ ) );
 
@@ -665,11 +665,26 @@ function koba_load_vault_assets() {
         )
     );
 
+    wp_enqueue_style(
+        'koba-illustrated-pages',
+        KOBA_IA_URL . 'assets/illustrated-pages.css',
+        array('bloom-style'),
+        filemtime(KOBA_IA_PATH . 'assets/illustrated-pages.css')
+    );
+
     wp_enqueue_script(
         'koba-reader-handoff-js',
         KOBA_IA_URL . 'assets/reader-handoff.js',
         array(),
         filemtime(KOBA_IA_PATH . 'assets/reader-handoff.js'),
+        true
+    );
+
+    wp_enqueue_script(
+        'koba-illustrated-pages-js',
+        KOBA_IA_URL . 'assets/illustrated-pages.js',
+        array(),
+        filemtime(KOBA_IA_PATH . 'assets/illustrated-pages.js'),
         true
     );
 
@@ -1407,6 +1422,8 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         let hudIdleTimeout;
         let annotationSelection = null;
         let annotations = [];
+        let illustratedBook = null;
+        let illustratedGroupSignature = "";
 
         try {
             const savedAnnotations = JSON.parse(localStorage.getItem(annotationKey) || "[]");
@@ -2027,14 +2044,32 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         });
 
         let resizeTimer;
+        function refreshIllustratedLayout() {
+            if (!illustratedBook || !window.KobaIllustratedPages) return false;
+            const activePosition = Number(readerPages[currentIndex]?.node?.querySelector?.("[data-page-position]")?.dataset.pagePosition || 1);
+            const rebuilt = window.KobaIllustratedPages.buildReaderPages(illustratedBook, {
+                width: Math.max(1, container.clientWidth),
+                height: Math.max(1, container.clientHeight),
+            });
+            const signature = rebuilt.map(item => item.node.children.length).join(",");
+            if (signature === illustratedGroupSignature) return true;
+            illustratedGroupSignature = signature;
+            const coverOffset = readerPages[0]?.type === "cover" ? 1 : 0;
+            readerPages = coverOffset ? [readerPages[0], ...rebuilt] : rebuilt;
+            const destination = readerPages.findIndex(item => [...(item.node?.querySelectorAll?.("[data-page-position]") || [])].some(node => Number(node.dataset.pagePosition) === activePosition));
+            currentIndex = destination >= 0 ? destination : Math.min(currentIndex, readerPages.length - 1);
+            currentVisualPage = 0;
+            void renderPage();
+            return true;
+        }
         window.addEventListener("resize", () => {
             window.clearTimeout(resizeTimer);
-            resizeTimer = window.setTimeout(measureActivePagination, 120);
+            resizeTimer = window.setTimeout(() => { if (!refreshIllustratedLayout()) measureActivePagination(); }, 120);
         }, { passive: true });
         if ("ResizeObserver" in window) {
             const readerResizeObserver = new ResizeObserver(() => {
                 window.clearTimeout(resizeTimer);
-                resizeTimer = window.setTimeout(measureActivePagination, 80);
+                resizeTimer = window.setTimeout(() => { if (!refreshIllustratedLayout()) measureActivePagination(); }, 80);
             });
             readerResizeObserver.observe(container);
         }
@@ -2056,6 +2091,31 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                 if (!book) throw new Error("Manuscript lookup record missing.");
 
                 applyPublicationBackground(book);
+
+                if (book.layoutMode === "illustrated_pages") {
+                    if (!window.KobaIllustratedPages) throw new Error("Illustrated page presentation engine did not load.");
+                    const coverUrl = resolveEpubAssetUrl(book.coverUrl || book.coverArtUrl || "");
+                    readerPages = coverUrl
+                        ? [{ type: "cover", label: "Cover", node: createCoverPage({ ...book, coverUrl }) }]
+                        : [];
+                    illustratedBook = book;
+                    const illustratedPages = window.KobaIllustratedPages.buildReaderPages(book, {
+                        width: Math.max(1, container.clientWidth),
+                        height: Math.max(1, container.clientHeight),
+                    });
+                    illustratedGroupSignature = illustratedPages.map(item => item.node.children.length).join(",");
+                    readerPages.push(...illustratedPages);
+                    if (!readerPages.length) throw new Error("This illustrated publication does not contain any available pages.");
+                    settingsButton.hidden = true;
+                    settingsPanel.hidden = true;
+                    const savedIndex = Number(JSON.parse(localStorage.getItem(progressKey) || "null")?.sectionIndex || 0);
+                    currentIndex = Number.isInteger(savedIndex) && savedIndex >= 0 && savedIndex < readerPages.length ? savedIndex : 0;
+                    currentVisualPage = 0;
+                    renderPage();
+                    resetHUDTimeout();
+                    if (typeof window.revealMediaCanvas === "function") window.revealMediaCanvas();
+                    return;
+                }
 
                 const chapters = Array.isArray(book.chapters) ? book.chapters : [];
                 const epubCoverUrl = epubCoverCandidate(book, chapters);

@@ -58,5 +58,5 @@ test("legacy and security-sensitive player paths remain outside this layout chan
   assert.match(plugin, /requestAuthorizedPublication\(\)/);
   assert.match(plugin, /Authorization: `Bearer \$\{readerToken\}`/);
   assert.match(plugin, /koba_get_authoritative_bookstore_url\(\)/);
-  assert.match(plugin, /Description: Version 6\.1\.0:/);
+  assert.match(plugin, /Description: Version 6\.2\.0:/);
 });

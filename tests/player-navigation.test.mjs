@@ -17,8 +17,8 @@ test("full publication shell renders authoritative navigation for every media di
   assert.match(player, /resolved\.origin === window\.location\.origin/);
   assert.doesNotMatch(player, /history\.back\(/);
   assert.match(plugin, /function koba_get_authoritative_bookstore_url/);
-  assert.match(plugin, /Version: 6\.1\.0/);
-  assert.match(plugin, /define\( 'KOBA_IA_VERSION', '6\.1\.0' \);/);
+  assert.match(plugin, /Version: 6\.2\.0/);
+  assert.match(plugin, /define\( 'KOBA_IA_VERSION', '6\.2\.0' \);/);
   assert.match(plugin, /get_page_by_path\('bookshelf'/);
   assert.match(plugin, /get_page_by_path\('bookstore'/);
   assert.match(plugin, /'readerUrl'\s*=>\s*koba_get_authoritative_bookstore_url\(\)/);
