@@ -2079,7 +2079,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                 width: Math.max(1, container.clientWidth),
                 height: Math.max(1, container.clientHeight),
             });
-            const signature = rebuilt.map(item => item.node.children.length).join(",");
+            const signature = rebuilt.map(item => item.pages.length).join(",");
             if (signature === illustratedGroupSignature) return true;
             illustratedGroupSignature = signature;
             const coverOffset = readerPages[0]?.type === "cover" ? 1 : 0;
@@ -2133,7 +2133,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                         width: Math.max(1, container.clientWidth),
                         height: Math.max(1, container.clientHeight),
                     });
-                    illustratedGroupSignature = illustratedPages.map(item => item.node.children.length).join(",");
+                    illustratedGroupSignature = illustratedPages.map(item => item.pages.length).join(",");
                     readerPages.push(...illustratedPages);
                     if (!readerPages.length) throw new Error("This illustrated publication does not contain any available pages.");
                     settingsButton.hidden = true;
