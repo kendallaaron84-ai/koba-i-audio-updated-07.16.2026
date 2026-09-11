@@ -7,7 +7,6 @@
   const catalogShelfNode = document.getElementById("jubilee-catalog-root");
   const config = typeof JubileeConfig !== "undefined" ? JubileeConfig : {};
   const baseDashboardUrl = String(config.dashboardUrl || "http://localhost:3000").replace(/\/$/, "");
-  const sessionUserPhone = String(config.userPhone || "");
   const READER_SESSION_STORAGE_KEY = "koba_reader_session";
   const READER_SESSION_VERSION = 2;
   const EXPIRATION_SKEW_MS = 30 * 1000;
@@ -15,20 +14,29 @@
   if (immersiveCanvasNode) {
     const assetKey = immersiveCanvasNode.getAttribute("data-asset") || "";
     const studioKey = immersiveCanvasNode.getAttribute("data-studio-key") || "";
+    const paidPublication = immersiveCanvasNode.getAttribute("data-paid-publication") === "true";
     if (!assetKey) return;
 
-    initializeImmersivePublication(assetKey, studioKey).catch((error) => {
-      showImmersiveError(error instanceof Error ? error.message : "Unable to open this publication.");
-      if (!hasAnyGlobalReaderSession() || isAuthorizationFailure(error)) {
-        bindImmersiveTemplateListeners(assetKey, studioKey);
+    const handoffReady = window.KobaReaderHandoff ? window.KobaReaderHandoff.ready : Promise.resolve(null);
+    handoffReady.then(() => {
+      const canonicalSession = window.KobaReaderHandoff
+        ? window.KobaReaderHandoff.sessionForAsset(assetKey, studioKey)
+        : null;
+      if (paidPublication && !canonicalSession) {
+        window.location.replace(`${baseDashboardUrl}/reader/open?assetId=${encodeURIComponent(assetKey)}`);
+        return;
       }
+      return initializeImmersivePublication(assetKey, studioKey, paidPublication);
+    }).catch((error) => {
+      showImmersiveError(error instanceof Error ? error.message : "Unable to open this publication.");
     });
   } else if (catalogShelfNode) {
     const studioKey =
       catalogShelfNode.getAttribute("data-studio-key") ||
       String(config.studioKey || "");
     const productType = catalogShelfNode.getAttribute("data-type") || "";
-    const render = () => renderAuthorLibrary(studioKey, productType, catalogShelfNode);
+    const catalogScope = catalogShelfNode.getAttribute("data-scope") === "global" ? "global" : "tenant";
+    const render = () => renderAuthorLibrary(studioKey, productType, catalogScope, catalogShelfNode);
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", render, { once: true });
     } else {
@@ -77,47 +85,6 @@
     return session;
   }
 
-  function persistGlobalReaderSession(tenantId, readerToken, normalizedPhone, expiresAt) {
-    const expiration = Number(expiresAt) || readerTokenExpiresAt(readerToken);
-    if (!tenantId || !readerToken || !Number.isFinite(expiration) || expiration <= Date.now() + EXPIRATION_SKEW_MS) {
-      throw new Error("The reader access token did not contain a valid expiration time.");
-    }
-    const registry = readSessionRegistry();
-    registry.tenants[tenantId] = {
-      tenantId,
-      globalReaderToken: readerToken,
-      normalizedPhone: String(normalizedPhone || "").replace(/\D/g, ""),
-      expiresAt: expiration,
-      savedAt: Date.now()
-    };
-    writeSessionRegistry(registry);
-    return registry.tenants[tenantId];
-  }
-
-  function readerTokenExpiresAt(readerToken) {
-    try {
-      const encodedPayload = String(readerToken).split(".")[1] || "";
-      const base64 = encodedPayload.replace(/-/g, "+").replace(/_/g, "/");
-      const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-      const payload = JSON.parse(window.atob(padded));
-      return Number(payload.exp) * 1000 || 0;
-    } catch {
-      return 0;
-    }
-  }
-
-  function readerTokenTenantId(readerToken) {
-    try {
-      const encodedPayload = String(readerToken).split(".")[1] || "";
-      const base64 = encodedPayload.replace(/-/g, "+").replace(/_/g, "/");
-      const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-      const payload = JSON.parse(window.atob(padded));
-      return typeof payload.tenantId === "string" ? payload.tenantId : "";
-    } catch {
-      return "";
-    }
-  }
-
   function clearGlobalReaderSession(tenantId) {
     const registry = readSessionRegistry();
     if (!registry.tenants[tenantId]) return;
@@ -143,54 +110,34 @@
     return Boolean(error && (error.status === 401 || error.status === 403));
   }
 
-  function cleanCheckoutQuery() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("session_id");
-    url.searchParams.delete("status");
-    window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
-  }
-
-  async function initializeImmersivePublication(assetKey, studioKey) {
+  async function initializeImmersivePublication(assetKey, studioKey, paidPublication) {
+    const canonicalSession = window.KobaReaderHandoff
+      ? window.KobaReaderHandoff.sessionForAsset(assetKey, studioKey)
+      : null;
+    if (canonicalSession) {
+      try {
+        bootBloomPlayerWithData(await fetchAuthorizedPublication(assetKey, canonicalSession.globalReaderToken));
+        return;
+      } catch (error) {
+        window.KobaReaderHandoff.clearTenant(canonicalSession.tenantId, canonicalSession.assetId, canonicalSession.principalType);
+        error.canonicalHandoff = true;
+        throw error;
+      }
+    }
     const query = new URLSearchParams(window.location.search);
     const checkoutSessionId = query.get("session_id") || "";
     let storedSession = readGlobalReaderSession(studioKey);
     let readerToken = storedSession ? storedSession.globalReaderToken : "";
 
-    // One-time migration for readers who completed checkout before the
-    // tenant-scoped registry was introduced.
-    if (!readerToken) {
-      const legacyTokenKey = `koba_reader_token_${assetKey}`;
-      const legacyToken = sessionStorage.getItem(legacyTokenKey) || "";
-      if (legacyToken && readerTokenExpiresAt(legacyToken) > Date.now() + EXPIRATION_SKEW_MS) {
-        storedSession = persistGlobalReaderSession(
-          readerTokenTenantId(legacyToken) || studioKey,
-          legacyToken,
-          sessionUserPhone,
-          readerTokenExpiresAt(legacyToken)
-        );
-        readerToken = storedSession.globalReaderToken;
-        sessionStorage.removeItem(legacyTokenKey);
-      }
-    }
-
     if (checkoutSessionId) {
-      const completion = await completeListenerCheckout(assetKey, checkoutSessionId);
-      readerToken = String(completion.readerToken || "");
-      if (!readerToken) throw new Error("Stripe completed the payment but no reader access token was returned.");
-      const completionTenantId = String(completion.tenantId || studioKey);
-      if (!completionTenantId) throw new Error("The completed purchase did not return an author-library identity.");
-      storedSession = persistGlobalReaderSession(
-        completionTenantId,
-        readerToken,
-        completion.normalizedPhone,
-        completion.expiresAt
+      window.location.replace(
+        `${baseDashboardUrl}/reader/claim?session_id=${encodeURIComponent(checkoutSessionId)}`
       );
-      cleanCheckoutQuery();
+      return;
     }
 
-    // Every reader establishes one verified 30-day session, including readers
-    // opening a free publication. Once that tenant-scoped session exists, it is
-    // reused across eligible titles so the phone prompt is not shown again.
+    // Reuse only canonical bearer sessions previously established through the
+    // reader handoff. Free access is established by the Turnstile launcher.
     const candidateSessions = storedSession
       ? [
           storedSession,
@@ -228,15 +175,10 @@
       showPurchaseRequired(assetKey);
       return;
     }
-    bindImmersiveTemplateListeners(assetKey, studioKey);
-  }
-
-  async function completeListenerCheckout(assetKey, checkoutSessionId) {
-    return requestJson(`${baseDashboardUrl}/api/checkout/listener-session/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assetKey, checkoutSessionId })
-    });
+    const launcher = paidPublication ? "/reader/open" : "/reader/free";
+    window.location.replace(
+      `${baseDashboardUrl}${launcher}?assetId=${encodeURIComponent(assetKey)}`
+    );
   }
 
   async function fetchAuthorizedPublication(assetKey, readerToken) {
@@ -247,19 +189,6 @@
     const payload = await requestJson(target.toString(), {
       headers
     });
-    const renewedSession = payload.readerSession;
-    if (renewedSession && renewedSession.readerToken) {
-      const renewedTenantId = String(
-        renewedSession.tenantId || readerTokenTenantId(renewedSession.readerToken)
-      );
-      const existingSession = readGlobalReaderSession(renewedTenantId);
-      persistGlobalReaderSession(
-        renewedTenantId,
-        String(renewedSession.readerToken),
-        existingSession ? existingSession.normalizedPhone : "",
-        renewedSession.expiresAt
-      );
-    }
     const publication = Array.isArray(payload.products)
       ? payload.products.find((item) => item.assetKey === assetKey)
       : null;
@@ -277,107 +206,6 @@
       throw error;
     }
     return payload;
-  }
-
-  function bindImmersiveTemplateListeners(currentAsset, currentStudio) {
-    const phoneInput = document.getElementById("koba-auth-phone-input");
-    const sendBtn = document.getElementById("koba-auth-submit-trigger");
-    const otpInput = document.getElementById("koba-auth-otp-input");
-    const verifyBtn = document.getElementById("koba-otp-submit-trigger");
-    const phoneDrawer = document.getElementById("koba-sms-input-drawer");
-    const verifyDrawer = document.getElementById("koba-sms-verification-drawer");
-    const errorRegion = document.getElementById("koba-ui-error-region");
-
-    if (!phoneInput || !sendBtn || !otpInput || !verifyBtn) return;
-    if (sendBtn.dataset.kobaBound === "true") return;
-    sendBtn.dataset.kobaBound = "true";
-    verifyBtn.dataset.kobaBound = "true";
-    if (!phoneInput.value && sessionUserPhone) {
-      const savedPhone = String(sessionUserPhone).trim();
-      phoneInput.value = savedPhone.startsWith("+") ? savedPhone : `+${savedPhone}`;
-    }
-
-    const showError = (message) => {
-      if (errorRegion) errorRegion.textContent = message || "";
-    };
-    const resolvePhone = () => {
-      const phoneE164 = phoneInput.value.trim();
-      return /^\+[1-9]\d{7,14}$/.test(phoneE164) ? phoneE164 : "";
-    };
-
-    sendBtn.addEventListener("click", async (event) => {
-      event.preventDefault();
-      showError("");
-      const phone = resolvePhone();
-      if (!phone) return showError("Enter a complete phone number with + and country code, for example +12106878982.");
-      sendBtn.disabled = true;
-      sendBtn.textContent = "Sending Access Code...";
-      try {
-        await triggerUnifiedCheckout(currentAsset, currentStudio, phone);
-        if (phoneDrawer) phoneDrawer.style.display = "none";
-        if (verifyDrawer) verifyDrawer.style.display = "block";
-        otpInput.focus();
-      } catch (error) {
-        showError(error instanceof Error ? error.message : "Unable to send the access code.");
-      } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = "Send Access Code";
-      }
-    });
-
-    verifyBtn.addEventListener("click", async (event) => {
-      event.preventDefault();
-      showError("");
-      const phone = resolvePhone();
-      const pinCode = otpInput.value.replace(/\D/g, "");
-      if (!phone) return showError("Enter a complete phone number with + and country code, for example +12106878982.");
-      if (pinCode.length !== 6) return showError("Enter the six-digit verification code.");
-      verifyBtn.disabled = true;
-      verifyBtn.textContent = "Verifying...";
-      try {
-        const payload = await submitPinVerify(currentAsset, currentStudio, phone, pinCode);
-        if (payload.readerToken) {
-          persistGlobalReaderSession(
-            String(payload.tenantId || currentStudio),
-            String(payload.readerToken),
-            payload.normalizedPhone || phone,
-            payload.expiresAt
-          );
-        }
-        bootBloomPlayerWithData(payload);
-      } catch (error) {
-        showError(error instanceof Error ? error.message : "Verification was refused.");
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = "Verify Passcode";
-      }
-    });
-  }
-
-  async function triggerUnifiedCheckout(assetId, studioKey, phone) {
-    await requestJson(`${baseDashboardUrl}/api/checkout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Studio-Key": studioKey },
-      body: JSON.stringify({ assetId, assetKey: assetId, phone, phoneNumber: phone })
-    });
-    return triggerTwilioSmsSend(assetId, studioKey, phone);
-  }
-
-  window.triggerUnifiedCheckout = triggerUnifiedCheckout;
-
-  function triggerTwilioSmsSend(assetId, studioKey, phone) {
-    return requestJson(`${baseDashboardUrl}/api/auth/sms-send`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Studio-Key": studioKey },
-      body: JSON.stringify({ phone, phoneNumber: phone, assetKey: assetId, assetId })
-    });
-  }
-
-  function submitPinVerify(assetId, studioKey, phone, pinCode) {
-    return requestJson(`${baseDashboardUrl}/api/auth/sms-verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Studio-Key": studioKey },
-      body: JSON.stringify({ phone, phoneNumber: phone, assetKey: assetId, assetId, code: pinCode, otpCode: pinCode })
-    });
   }
 
   function showImmersiveError(message) {
@@ -438,18 +266,13 @@
     window.initKobaBloomPlayer(playerRoot, window.kobaData, "full");
   }
 
-  async function renderAuthorLibrary(studioKey, productType, container) {
+  async function renderAuthorLibrary(_studioKey, productType, catalogScope, container) {
     if (!config.apiUrl) return renderCatalogError(container, "The catalog service is not configured.");
-    if (!studioKey) return renderCatalogError(container, "KOBA-I Audio must be activated before the bookstore can load.");
     try {
       const targetUrl = new URL(config.apiUrl);
-      targetUrl.searchParams.set("author", "tenant");
+      targetUrl.searchParams.set("scope", catalogScope === "global" ? "global" : "tenant");
       if (productType) targetUrl.searchParams.set("type", productType);
-      const result = await requestJson(targetUrl.toString(), {
-        headers: {
-          "X-Studio-Key": studioKey,
-        },
-      });
+      const result = await requestJson(targetUrl.toString());
       if (!Array.isArray(result.products) || result.products.length === 0) {
         return renderCatalogError(container, "No publications are available yet.");
       }
@@ -461,11 +284,6 @@
 
   function renderCatalogError(container, message) {
     container.innerHTML = `<div role="status" style="padding:32px;text-align:center;color:#64748b;">${escapeHtml(message)}</div>`;
-  }
-
-  function publicationPath(assetKey, recovery) {
-    const suffix = recovery ? "/?recover=1" : "/";
-    return `/koba_publication/${encodeURIComponent(assetKey)}${suffix}`;
   }
 
   async function startListenerPurchase(assetKey, button) {
@@ -507,13 +325,45 @@
     });
   }
 
+  function normalizeCatalogType(item) {
+    const assetKey = String(item.assetKey || item.id || "").toLowerCase();
+    const rawType = String(item.type || item.assetType || item.mediaType || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
+
+    if (["ebook", "digitalbook"].includes(rawType) || assetKey.startsWith("ebk_")) {
+      return "ebook";
+    }
+    if (["audiobook", "audio"].includes(rawType) || assetKey.startsWith("abk_") || assetKey.startsWith("aud_")) {
+      return "audiobook";
+    }
+    return "publication";
+  }
+
+  function groupCatalogProducts(productsList) {
+    const definitions = [
+      { key: "audiobook", label: "Audiobooks" },
+      { key: "ebook", label: "E-books" },
+      { key: "publication", label: "Publications" }
+    ];
+    const grouped = new Map(definitions.map((definition) => [definition.key, []]));
+    productsList.forEach((item) => grouped.get(normalizeCatalogType(item)).push(item));
+    return definitions
+      .map((definition) => ({ ...definition, products: grouped.get(definition.key) }))
+      .filter((group) => group.products.length > 0);
+  }
+
   function buildCatalogGridUI(container, productsList) {
     container.innerHTML = "";
     const sectionBlock = document.createElement("div");
+    sectionBlock.className = "jubilee-catalog-groups";
     sectionBlock.style.width = "100%";
-    sectionBlock.innerHTML = `
-      <div class="jubilee-bookshelf-track">
-        ${productsList.map((item) => {
+    sectionBlock.innerHTML = groupCatalogProducts(productsList).map((group) => `
+      <section class="jubilee-catalog-group" data-koba-catalog-group="${group.key}" aria-labelledby="koba-catalog-${group.key}">
+        <h3 id="koba-catalog-${group.key}" class="jubilee-catalog-group-title">${group.label}</h3>
+        <div class="jubilee-bookshelf-track">
+        ${group.products.map((item) => {
           const assetKey = String(item.assetKey || item.id || "");
           const numericPrice = Number(item.price ?? item.unitPrice ?? 0);
           const isPaid = Number.isFinite(numericPrice) && numericPrice > 0;
@@ -526,9 +376,9 @@
           );
           const primaryAction = isPaid
             ? buildCatalogPurchaseAction(assetKey, numericPrice)
-            : buildCatalogOpenAction(assetKey, openLabel);
+            : buildCatalogOpenAction(assetKey, openLabel, true);
           const recoveryLink = isPaid
-            ? `<a href="${publicationPath(assetKey, true)}" class="already-purchased-link">Already purchased? Sign in</a>`
+            ? `<a href="${baseDashboardUrl}/reader/open?assetId=${encodeURIComponent(assetKey)}" class="already-purchased-link">Already purchased? Sign in</a>`
             : "";
           return `
             <article class="jubilee-bookshelf-card" data-koba-catalog-card="${escapeHtml(assetKey)}" tabindex="0" role="group" aria-label="${escapeHtml(item.title || "Publication")}. Activate the card to read its synopsis." aria-expanded="false">
@@ -550,7 +400,8 @@
               </div>
             </article>`;
         }).join("")}
-      </div>`;
+        </div>
+      </section>`).join("");
     let pointerStart = null;
     let suppressCardFlip = false;
     sectionBlock.addEventListener("pointerdown", (event) => {
@@ -621,8 +472,11 @@
     return `<button type="button" class="jubilee-catalog-action jubilee-catalog-action--buy" data-koba-primary-action data-koba-purchase="${escapeHtml(assetKey)}">Buy Now — $${numericPrice.toFixed(2)}</button>`;
   }
 
-  function buildCatalogOpenAction(assetKey, openLabel) {
-    return `<a href="${publicationPath(assetKey, false)}" class="jubilee-catalog-action jubilee-catalog-action--owned" data-koba-primary-action>${escapeHtml(openLabel)}</a>`;
+  function buildCatalogOpenAction(assetKey, openLabel, freeAccess) {
+    const target = freeAccess
+      ? `${baseDashboardUrl}/reader/free?assetId=${encodeURIComponent(assetKey)}`
+      : `${baseDashboardUrl}/reader/open?assetId=${encodeURIComponent(assetKey)}`;
+    return `<a href="${escapeHtml(target)}" class="jubilee-catalog-action jubilee-catalog-action--owned" data-koba-primary-action>${escapeHtml(openLabel)}</a>`;
   }
 
   async function hydrateCatalogEntitlements(sectionBlock) {
@@ -640,7 +494,7 @@
           const productType = String(publication.type || publication.mediaType || "").toLowerCase();
           const openLabel = productType === "ebook" ? "Open Book" : "Listen Now";
           card.querySelectorAll("[data-koba-card-actions]").forEach((slot) => {
-            slot.innerHTML = buildCatalogOpenAction(assetKey, openLabel);
+            slot.innerHTML = buildCatalogOpenAction(assetKey, openLabel, false);
           });
           const recoveryLink = card.querySelector(".already-purchased-link");
           if (recoveryLink) recoveryLink.remove();

@@ -1,0 +1,1236 @@
+{
+  "generatedAt": "2026-09-11T15:47:00.499Z",
+  "packageSource": "C:\\Users\\kenda\\OneDrive\\Documents\\KOBA-I Audio — Founder Vision & Product Portfolio\\github-koba-i-audio-6.1.0",
+  "results": [
+    {
+      "fixture": "01-text-only",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [],
+      "order": [
+        "Before text.",
+        "After text."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 0,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "02-jpeg",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 100,
+          "naturalHeight": 50,
+          "width": 100,
+          "height": 50,
+          "left": 590,
+          "right": 690,
+          "top": 142.390625,
+          "bottom": 192.390625,
+          "alt": "JPEG fixture"
+        }
+      ],
+      "order": [
+        "Before.",
+        "JPEG fixture",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "03-png-transparent",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 100,
+          "naturalHeight": 50,
+          "width": 100,
+          "height": 50,
+          "left": 590,
+          "right": 690,
+          "top": 142.390625,
+          "bottom": 192.390625,
+          "alt": "PNG transparency"
+        }
+      ],
+      "order": [
+        "Transparent PNG.",
+        "PNG transparency"
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "04-safe-svg",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 400,
+          "naturalHeight": 200,
+          "width": 400,
+          "height": 200,
+          "left": 440,
+          "right": 840,
+          "top": 142.390625,
+          "bottom": 342.390625,
+          "alt": "Safe SVG"
+        }
+      ],
+      "order": [
+        "Safe vector.",
+        "Safe SVG"
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "05-small-inline",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 80,
+          "naturalHeight": 40,
+          "width": 80,
+          "height": 40,
+          "left": 600,
+          "right": 680,
+          "top": 142.390625,
+          "bottom": 182.390625,
+          "alt": "Small inline"
+        }
+      ],
+      "order": [
+        "Before.",
+        "Small inline",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "06-full-width",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 1200,
+          "naturalHeight": 500,
+          "width": 759.96875,
+          "height": 316.65625,
+          "left": 260.015625,
+          "right": 1019.984375,
+          "top": 142.390625,
+          "bottom": 459.046875,
+          "alt": "Full width"
+        }
+      ],
+      "order": [
+        "Wide art.",
+        "Full width"
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "07-full-page-like",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "width": 553.5,
+          "height": 738,
+          "left": 363.25,
+          "right": 916.75,
+          "top": 89.59375,
+          "bottom": 827.59375,
+          "alt": "Full page illustration"
+        }
+      ],
+      "order": [
+        "Full page illustration",
+        "Following content."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "08-caption",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 600,
+          "naturalHeight": 300,
+          "width": 600,
+          "height": 300,
+          "left": 340,
+          "right": 940,
+          "top": 93.59375,
+          "bottom": 393.59375,
+          "alt": "Captioned art"
+        }
+      ],
+      "order": [
+        "Captioned art",
+        "Deterministic caption",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [
+        {
+          "text": "Deterministic caption",
+          "parentTag": "FIGURE"
+        }
+      ],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "09-multiple",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 240,
+          "naturalHeight": 120,
+          "width": 240,
+          "height": 120,
+          "left": 520,
+          "right": 760,
+          "top": 142.390625,
+          "bottom": 262.390625,
+          "alt": "One"
+        },
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 100,
+          "naturalHeight": 80,
+          "width": 100,
+          "height": 80,
+          "left": 590,
+          "right": 690,
+          "top": 339.1875,
+          "bottom": 419.1875,
+          "alt": "Two"
+        }
+      ],
+      "order": [
+        "Before.",
+        "One",
+        "Middle.",
+        "Two",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 2,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "10-broken",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [],
+      "order": [
+        "Before.",
+        "Survives broken image."
+      ],
+      "unavailable": 1,
+      "afterVisible": true,
+      "captions": [],
+      "coverImages": 0,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "11-cover-dedupe",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "width": 332.78125,
+          "height": 499.1875,
+          "left": 473.609375,
+          "right": 806.390625,
+          "top": 160.40625,
+          "bottom": 659.59375,
+          "alt": "Fixture cover art"
+        }
+      ],
+      "order": [],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "12-cover-fallback",
+      "viewport": "desktop",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "width": 332.78125,
+          "height": 499.1875,
+          "left": 473.609375,
+          "right": 806.390625,
+          "top": 160.40625,
+          "bottom": 659.59375,
+          "alt": "Fixture cover art"
+        }
+      ],
+      "order": [],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 1280,
+        "width": 1280,
+        "scrollWidth": 1280
+      }
+    },
+    {
+      "fixture": "01-text-only",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [],
+      "order": [
+        "Before text.",
+        "After text."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 0,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "02-jpeg",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 100,
+          "naturalHeight": 50,
+          "width": 100,
+          "height": 50,
+          "left": 165,
+          "right": 265,
+          "top": 136.390625,
+          "bottom": 186.390625,
+          "alt": "JPEG fixture"
+        }
+      ],
+      "order": [
+        "Before.",
+        "JPEG fixture",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "03-png-transparent",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 100,
+          "naturalHeight": 50,
+          "width": 100,
+          "height": 50,
+          "left": 165,
+          "right": 265,
+          "top": 136.390625,
+          "bottom": 186.390625,
+          "alt": "PNG transparency"
+        }
+      ],
+      "order": [
+        "Transparent PNG.",
+        "PNG transparency"
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "04-safe-svg",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 400,
+          "naturalHeight": 200,
+          "width": 382,
+          "height": 191,
+          "left": 24,
+          "right": 406,
+          "top": 136.390625,
+          "bottom": 327.390625,
+          "alt": "Safe SVG"
+        }
+      ],
+      "order": [
+        "Safe vector.",
+        "Safe SVG"
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "05-small-inline",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 80,
+          "naturalHeight": 40,
+          "width": 80,
+          "height": 40,
+          "left": 175,
+          "right": 255,
+          "top": 136.390625,
+          "bottom": 176.390625,
+          "alt": "Small inline"
+        }
+      ],
+      "order": [
+        "Before.",
+        "Small inline",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "06-full-width",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 1200,
+          "naturalHeight": 500,
+          "width": 381.96875,
+          "height": 159.15625,
+          "left": 24.015625,
+          "right": 405.984375,
+          "top": 136.390625,
+          "bottom": 295.546875,
+          "alt": "Full width"
+        }
+      ],
+      "order": [
+        "Wide art.",
+        "Full width"
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "07-full-page-like",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "width": 381.984375,
+          "height": 509.328125,
+          "left": 24,
+          "right": 405.984375,
+          "top": 89.59375,
+          "bottom": 598.921875,
+          "alt": "Full page illustration"
+        }
+      ],
+      "order": [
+        "Full page illustration",
+        "Following content."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "08-caption",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 600,
+          "naturalHeight": 300,
+          "width": 382,
+          "height": 191,
+          "left": 24,
+          "right": 406,
+          "top": 93.59375,
+          "bottom": 284.59375,
+          "alt": "Captioned art"
+        }
+      ],
+      "order": [
+        "Captioned art",
+        "Deterministic caption",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [
+        {
+          "text": "Deterministic caption",
+          "parentTag": "FIGURE"
+        }
+      ],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "09-multiple",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 240,
+          "naturalHeight": 120,
+          "width": 240,
+          "height": 120,
+          "left": 95,
+          "right": 335,
+          "top": 136.390625,
+          "bottom": 256.390625,
+          "alt": "One"
+        },
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 100,
+          "naturalHeight": 80,
+          "width": 100,
+          "height": 80,
+          "left": 165,
+          "right": 265,
+          "top": 321.1875,
+          "bottom": 401.1875,
+          "alt": "Two"
+        }
+      ],
+      "order": [
+        "Before.",
+        "One",
+        "Middle.",
+        "Two",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 2,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "10-broken",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [],
+      "order": [
+        "Before.",
+        "Survives broken image."
+      ],
+      "unavailable": 1,
+      "afterVisible": true,
+      "captions": [],
+      "coverImages": 0,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "11-cover-dedupe",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "width": 300.78125,
+          "height": 451.1875,
+          "left": 64.609375,
+          "right": 365.390625,
+          "top": 144.40625,
+          "bottom": 595.59375,
+          "alt": "Fixture cover art"
+        }
+      ],
+      "order": [],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "12-cover-fallback",
+      "viewport": "430px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "width": 300.78125,
+          "height": 451.1875,
+          "left": 64.609375,
+          "right": 365.390625,
+          "top": 144.40625,
+          "bottom": 595.59375,
+          "alt": "Fixture cover art"
+        }
+      ],
+      "order": [],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 430,
+        "width": 430,
+        "scrollWidth": 430
+      }
+    },
+    {
+      "fixture": "01-text-only",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [],
+      "order": [
+        "Before text.",
+        "After text."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 0,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "02-jpeg",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 100,
+          "naturalHeight": 50,
+          "width": 100,
+          "height": 50,
+          "left": 145,
+          "right": 245,
+          "top": 136.390625,
+          "bottom": 186.390625,
+          "alt": "JPEG fixture"
+        }
+      ],
+      "order": [
+        "Before.",
+        "JPEG fixture",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "03-png-transparent",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 100,
+          "naturalHeight": 50,
+          "width": 100,
+          "height": 50,
+          "left": 145,
+          "right": 245,
+          "top": 136.390625,
+          "bottom": 186.390625,
+          "alt": "PNG transparency"
+        }
+      ],
+      "order": [
+        "Transparent PNG.",
+        "PNG transparency"
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "04-safe-svg",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 400,
+          "naturalHeight": 200,
+          "width": 342,
+          "height": 171,
+          "left": 24,
+          "right": 366,
+          "top": 136.390625,
+          "bottom": 307.390625,
+          "alt": "Safe SVG"
+        }
+      ],
+      "order": [
+        "Safe vector.",
+        "Safe SVG"
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "05-small-inline",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 80,
+          "naturalHeight": 40,
+          "width": 80,
+          "height": 40,
+          "left": 155,
+          "right": 235,
+          "top": 136.390625,
+          "bottom": 176.390625,
+          "alt": "Small inline"
+        }
+      ],
+      "order": [
+        "Before.",
+        "Small inline",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "06-full-width",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 1200,
+          "naturalHeight": 500,
+          "width": 342,
+          "height": 142.5,
+          "left": 24,
+          "right": 366,
+          "top": 136.390625,
+          "bottom": 278.890625,
+          "alt": "Full width"
+        }
+      ],
+      "order": [
+        "Wide art.",
+        "Full width"
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "07-full-page-like",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 900,
+          "naturalHeight": 1200,
+          "width": 342,
+          "height": 456,
+          "left": 24,
+          "right": 366,
+          "top": 89.59375,
+          "bottom": 545.59375,
+          "alt": "Full page illustration"
+        }
+      ],
+      "order": [
+        "Full page illustration",
+        "Following content."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "08-caption",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 600,
+          "naturalHeight": 300,
+          "width": 342,
+          "height": 171,
+          "left": 24,
+          "right": 366,
+          "top": 93.59375,
+          "bottom": 264.59375,
+          "alt": "Captioned art"
+        }
+      ],
+      "order": [
+        "Captioned art",
+        "Deterministic caption",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [
+        {
+          "text": "Deterministic caption",
+          "parentTag": "FIGURE"
+        }
+      ],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "09-multiple",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 240,
+          "naturalHeight": 120,
+          "width": 240,
+          "height": 120,
+          "left": 75,
+          "right": 315,
+          "top": 136.390625,
+          "bottom": 256.390625,
+          "alt": "One"
+        },
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 100,
+          "naturalHeight": 80,
+          "width": 100,
+          "height": 80,
+          "left": 145,
+          "right": 245,
+          "top": 321.1875,
+          "bottom": 401.1875,
+          "alt": "Two"
+        }
+      ],
+      "order": [
+        "Before.",
+        "One",
+        "Middle.",
+        "Two",
+        "After."
+      ],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 2,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "10-broken",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [],
+      "order": [
+        "Before.",
+        "Survives broken image."
+      ],
+      "unavailable": 1,
+      "afterVisible": true,
+      "captions": [],
+      "coverImages": 0,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "11-cover-dedupe",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "width": 284.78125,
+          "height": 427.1875,
+          "left": 52.609375,
+          "right": 337.390625,
+          "top": 136.40625,
+          "bottom": 563.59375,
+          "alt": "Fixture cover art"
+        }
+      ],
+      "order": [],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    },
+    {
+      "fixture": "12-cover-fallback",
+      "viewport": "390px",
+      "status": "PASS",
+      "images": [
+        {
+          "id": "",
+          "loaded": true,
+          "naturalWidth": 600,
+          "naturalHeight": 900,
+          "width": 284.78125,
+          "height": 427.1875,
+          "left": 52.609375,
+          "right": 337.390625,
+          "top": 136.40625,
+          "bottom": 563.59375,
+          "alt": "Fixture cover art"
+        }
+      ],
+      "order": [],
+      "unavailable": 0,
+      "afterVisible": false,
+      "captions": [],
+      "coverImages": 1,
+      "overflow": false,
+      "reader": {
+        "left": 0,
+        "right": 390,
+        "width": 390,
+        "scrollWidth": 390
+      }
+    }
+  ]
+}

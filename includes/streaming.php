@@ -9,13 +9,8 @@ if (!defined('ABSPATH')) exit;
 
 // --- REGISTRATION CORNER ---
 add_action('rest_api_init', function () {
-    // 1. Ghost Protocol Streaming Route
-    register_rest_route('koba-ia/v2', '/stream/(?P<id>[a-zA-Z0-9_\-]+)', [
-        'methods'             => 'GET',
-        'callback'            => 'koba_secure_stream',
-        'permission_callback' => '__return_true', // Validated internally
-    ]);
-
+    // Phase 5F retired the public reader stream route. Protected playback now
+    // flows only through the canonical dashboard media manifest.
     // 2. 🚀 Sovereign Inbound Provisioning Engine (VPC Whitelisted Outbound Security)
     register_rest_route('koba-ia/v2', '/provision', [
         'methods'             => 'POST',

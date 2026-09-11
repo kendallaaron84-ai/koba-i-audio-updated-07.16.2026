@@ -1,0 +1,5 @@
+/vendor/
+/*.zip
+/.phpunit.result.cache
+/.DS_Store
+Thumbs.db

@@ -146,6 +146,33 @@
     z-index: 100; 
 }
 
+.k-bloom-back-to-store {
+    position: absolute;
+    top: max(18px, env(safe-area-inset-top));
+    left: max(18px, env(safe-area-inset-left));
+    z-index: 100001;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 999px;
+    background: rgba(7, 10, 15, 0.82);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    backdrop-filter: blur(8px);
+}
+
+.k-bloom-back-to-store:hover,
+.k-bloom-back-to-store:focus-visible {
+    border-color: #f97316;
+    color: #ffffff;
+    outline: 2px solid transparent;
+}
+
 /* 2. INTERFACE LAYOUT */
 .k-bloom-interface {
     position: absolute; inset: 0; z-index: 10;
@@ -305,6 +332,24 @@
    CATALOG BOOKSHELF
    Desktop: responsive grid. Mobile: touch-first snap carousel.
    ========================================================================= */
+.jubilee-catalog-groups {
+    display: grid;
+    gap: 34px;
+    width: 100%;
+}
+
+.jubilee-catalog-group {
+    min-width: 0;
+}
+
+.jubilee-catalog-group-title {
+    margin: 0;
+    color: #f9b437;
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+    font-weight: 800;
+    line-height: 1.2;
+}
+
 .jubilee-bookshelf-track {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 240px));
@@ -926,8 +971,14 @@ body.single-koba_publication #left-area { width: 100% !important; max-width: 100
     .k-btn-main { width: 60px; height: 60px; }
 
     .k-bloom-sidebar {
+        display: none;
         width: 100%; 
         margin-top: 10px; 
+    }
+
+    #koba-bloom-root.k-chapter-menu-open .k-bloom-sidebar {
+        display: flex;
+        flex-direction: column;
     }
 
     .k-list {
@@ -935,6 +986,73 @@ body.single-koba_publication #left-area { width: 100% !important; max-width: 100
         max-height: 300px !important; 
         overflow-y: auto !important; 
         padding-bottom: 20px; 
+    }
+}
+
+/* Compact video layouts keep the active media and controls inside the usable
+   viewport. The chapter menu is a reversible second grid row, never a cover-art
+   mode switch. */
+@media (orientation: landscape) and (max-height: 600px) {
+    .k-bloom-interface {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) auto;
+    }
+
+    .k-bloom-stage {
+        box-sizing: border-box;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+        justify-content: flex-start;
+        padding: calc(42px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    }
+
+    #koba-bloom-root.k-mode-video .k-video-viewport {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: auto !important;
+        max-height: calc(100dvh - 142px) !important;
+        margin-top: 0;
+    }
+
+    #koba-bloom-root.k-mode-video .k-video-element {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+    }
+
+    .k-bloom-controls {
+        flex: 0 0 auto;
+        gap: 4px;
+        max-width: min(760px, calc(100vw - 24px));
+    }
+
+    .k-buttons {
+        padding: 4px 10px;
+        gap: 8px;
+    }
+
+    .k-btn-icon { width: 36px; height: 36px; }
+    .k-btn-main { width: 44px; height: 44px; margin: 0 4px; }
+    .k-btn-icon svg { width: 24px !important; height: 24px !important; }
+    .k-btn-main svg { width: 34px !important; height: 34px !important; }
+
+    .k-bloom-sidebar {
+        display: none;
+        width: 100%;
+        max-height: 32dvh;
+        overflow: hidden;
+        background: rgba(10, 10, 10, 0.92);
+    }
+
+    #koba-bloom-root.k-chapter-menu-open .k-bloom-sidebar {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #koba-bloom-root.k-chapter-menu-open .k-list {
+        height: auto !important;
+        max-height: calc(32dvh - 54px) !important;
     }
 }
 
@@ -1150,6 +1268,59 @@ body.single-koba_publication #left-area { width: 100% !important; max-width: 100
 }
 
 /* Nook specific optimizations */
+.koba-reader-copy img,
+.k-ebook-content img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: min(82vh, 52rem);
+    object-fit: contain;
+    margin: 1.5rem auto;
+}
+
+.koba-reader-copy figure,
+.k-ebook-content figure {
+    width: 100%;
+    max-width: 100%;
+    margin: 1.75rem auto;
+    break-inside: avoid;
+}
+
+.koba-reader-copy figure img,
+.k-ebook-content figure img {
+    margin-bottom: .6rem;
+}
+
+.koba-reader-copy figcaption,
+.k-ebook-content figcaption {
+    max-width: 42rem;
+    margin: 0 auto;
+    text-align: center;
+    font-size: .875em;
+    line-height: 1.45;
+    opacity: .72;
+}
+
+.koba-reader-image-unavailable {
+    display: block;
+    max-width: 100%;
+    margin: 1rem 0;
+    padding: .75rem 1rem;
+    border: 1px dashed currentColor;
+    border-radius: .5rem;
+    opacity: .7;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+    .koba-reader-copy img,
+    .k-ebook-content img {
+        max-height: 75vh;
+        margin-block: 1rem;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .k-read-scrollbox {
         scroll-behavior: auto !important;
@@ -1255,5 +1426,375 @@ body.single-koba_publication #left-area { width: 100% !important; max-width: 100
     .k-reader-surface {
         line-height: 1.65 !important; /* Snugs lines slightly on compact phone displays */
         text-align: left !important;   /* Keeps portrait edge alignments clean */
+    }
+}
+
+/* ==========================================================================
+   P0 CROSS-DEVICE PUBLICATION SHELL
+   This final layer deliberately overrides the older width-only responsive
+   rules without changing the desktop player architecture.
+   ========================================================================== */
+:root {
+    --k-shell-header: 58px;
+    --k-shell-gap: 10px;
+    --k-shell-gap-compact: 6px;
+    --k-safe-top: env(safe-area-inset-top, 0px);
+    --k-safe-right: env(safe-area-inset-right, 0px);
+    --k-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --k-safe-left: env(safe-area-inset-left, 0px);
+    --k-touch-target: 44px;
+    --k-drawer-max: min(52dvh, 420px);
+}
+
+#koba-bloom-root {
+    height: 100vh !important;
+    height: 100svh !important;
+    height: 100dvh !important;
+}
+
+.k-primary-transport,
+.k-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.k-video-presentation-exit {
+    display: none;
+}
+
+.k-hidden-for-video-presentation {
+    display: none !important;
+}
+
+/* Phones use a dedicated single-column composition with two intentional
+   control rows and an overlay drawer that never replaces the media stage. */
+@media (max-width: 767px) {
+    .k-bloom-back-to-store {
+        top: calc(var(--k-safe-top) + 7px);
+        left: calc(var(--k-safe-left) + 8px);
+        min-width: var(--k-touch-target);
+        min-height: var(--k-touch-target);
+        padding: 0 10px;
+        font-size: 0;
+        border-radius: 10px;
+        backdrop-filter: none;
+    }
+
+    .k-bloom-back-to-store::after {
+        content: "\2190  Store";
+        font-size: 13px;
+    }
+
+    .k-bloom-logo,
+    #koba-bloom-root img[src*="koba-logo"] {
+        top: calc(var(--k-safe-top) + 8px) !important;
+        max-width: 86px !important;
+        margin: 0 !important;
+    }
+
+    .k-bloom-interface {
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-rows: minmax(0, 1fr) !important;
+        height: 100%;
+    }
+
+    .k-bloom-stage {
+        box-sizing: border-box;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        padding: calc(var(--k-shell-header) + var(--k-safe-top)) calc(12px + var(--k-safe-right)) calc(10px + var(--k-safe-bottom)) calc(12px + var(--k-safe-left));
+        gap: var(--k-shell-gap-compact);
+        justify-content: flex-start;
+        overflow: hidden;
+    }
+
+    .k-cover-art-stage {
+        flex: 1 1 auto;
+        min-height: 0;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #koba-bloom-root.k-mode-audio .k-cover-art-stage {
+        display: flex !important;
+    }
+
+    #koba-bloom-root.k-mode-video .k-cover-art-stage,
+    #koba-bloom-root.k-mode-video .k-bloom-cover-img {
+        display: none !important;
+    }
+
+    .k-bloom-cover-img {
+        width: min(54vw, 27dvh, 184px) !important;
+        height: min(54vw, 27dvh, 184px) !important;
+        margin: 0 auto 6px !important;
+    }
+
+    #koba-bloom-root.k-mode-video .k-video-viewport {
+        flex: 1 1 auto;
+        width: 100%;
+        min-height: 0;
+        height: auto !important;
+        max-height: none !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 16 / 9;
+    }
+
+    #koba-bloom-root.k-mode-video .k-video-element {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        object-fit: contain !important;
+    }
+
+    .k-bloom-controls {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 100%;
+        gap: 5px;
+    }
+
+    .k-scrubber {
+        min-height: 12px;
+        background-clip: content-box;
+        padding-block: 3px;
+        box-sizing: border-box;
+    }
+
+    .k-time-row {
+        margin-top: -6px;
+    }
+
+    .k-buttons {
+        display: grid;
+        grid-template-rows: auto auto;
+        gap: 5px;
+        padding: 5px 8px calc(5px + var(--k-safe-bottom));
+        border-radius: 12px;
+    }
+
+    .k-primary-transport,
+    .k-actions {
+        width: 100%;
+        min-width: 0;
+        justify-content: space-evenly;
+        gap: 2px;
+    }
+
+    .k-actions {
+        margin: 0;
+        padding: 3px 0 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .k-btn-icon {
+        width: var(--k-touch-target);
+        height: var(--k-touch-target);
+        min-width: var(--k-touch-target);
+        min-height: var(--k-touch-target);
+    }
+
+    .k-btn-main {
+        width: 56px;
+        height: 56px;
+        min-width: 56px;
+        min-height: 56px;
+        margin: 0 2px;
+    }
+
+    .k-btn-icon svg { width: 25px !important; height: 25px !important; }
+    .k-btn-main svg { width: 40px !important; height: 40px !important; }
+
+    .k-bloom-sidebar,
+    #koba-bloom-root.k-chapter-menu-open .k-bloom-sidebar {
+        position: absolute;
+        z-index: 250;
+        left: calc(8px + var(--k-safe-left));
+        right: calc(8px + var(--k-safe-right));
+        bottom: calc(8px + var(--k-safe-bottom));
+        width: auto;
+        max-height: var(--k-drawer-max);
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.16);
+        border-radius: 14px;
+        background: rgba(7,10,15,.97);
+        box-shadow: 0 -18px 50px rgba(0,0,0,.5);
+        backdrop-filter: none;
+    }
+
+    .k-bloom-sidebar { display: none; }
+    #koba-bloom-root.k-chapter-menu-open .k-bloom-sidebar { display: flex; }
+    #koba-bloom-root.k-chapter-menu-open .k-list {
+        height: auto !important;
+        max-height: calc(var(--k-drawer-max) - 58px) !important;
+        overflow-y: auto !important;
+    }
+}
+
+/* Tablets remain single-stage layouts. This explicitly eliminates the former
+   769-900px conflict where a 100vh sidebar became a second grid row. */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .k-bloom-interface {
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-rows: minmax(0, 1fr) !important;
+    }
+
+    .k-bloom-stage {
+        box-sizing: border-box;
+        height: 100%;
+        min-height: 0;
+        padding: calc(72px + var(--k-safe-top)) calc(24px + var(--k-safe-right)) calc(18px + var(--k-safe-bottom)) calc(24px + var(--k-safe-left));
+        overflow: hidden;
+    }
+
+    .k-bloom-cover-img {
+        width: min(42vw, 30dvh, 280px) !important;
+        height: min(42vw, 30dvh, 280px) !important;
+        margin-bottom: 16px !important;
+    }
+
+    .k-buttons {
+        padding: 10px 16px;
+    }
+
+    .k-bloom-sidebar,
+    #koba-bloom-root.k-chapter-menu-open .k-bloom-sidebar {
+        position: absolute;
+        z-index: 250;
+        display: none;
+        left: max(24px, var(--k-safe-left));
+        right: max(24px, var(--k-safe-right));
+        bottom: calc(18px + var(--k-safe-bottom));
+        width: auto;
+        height: auto;
+        max-height: min(46dvh, 480px);
+        overflow: hidden;
+        border-radius: 16px;
+        background: rgba(7,10,15,.97);
+    }
+
+    #koba-bloom-root.k-chapter-menu-open .k-bloom-sidebar { display: flex; }
+    #koba-bloom-root.k-chapter-menu-open .k-list {
+        height: auto !important;
+        max-height: calc(min(46dvh, 480px) - 60px) !important;
+        overflow-y: auto !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .k-primary-transport,
+    .k-actions {
+        display: contents;
+    }
+}
+
+/* Phone short-landscape video is a true presentation layer. The video node is
+   never recreated; only its containing layout changes. */
+@media (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
+    #koba-bloom-root.k-mode-video .k-bloom-stage {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        padding: var(--k-safe-top) var(--k-safe-right) var(--k-safe-bottom) var(--k-safe-left);
+        gap: 0;
+    }
+
+    #koba-bloom-root.k-mode-video .k-video-viewport {
+        min-height: 0;
+        height: 100% !important;
+        max-height: none !important;
+        margin: 0 !important;
+    }
+
+    #koba-bloom-root.k-video-presentation .k-bloom-logo,
+    #koba-bloom-root.k-video-presentation ~ .k-bloom-back-to-store,
+    #koba-bloom-root.k-video-presentation .k-bloom-back-to-store {
+        display: none !important;
+    }
+
+    #koba-bloom-root.k-video-presentation .k-bloom-stage {
+        position: absolute;
+        inset: 0;
+        display: block;
+        padding: 0;
+        background: #000;
+    }
+
+    #koba-bloom-root.k-video-presentation .k-video-viewport {
+        position: absolute;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: auto;
+    }
+
+    #koba-bloom-root.k-video-presentation .k-bloom-controls {
+        position: absolute;
+        z-index: 20;
+        left: calc(12px + var(--k-safe-left));
+        right: calc(12px + var(--k-safe-right));
+        bottom: calc(6px + var(--k-safe-bottom));
+        width: auto;
+        max-width: none;
+        padding: 26px 8px 0;
+        background: linear-gradient(transparent, rgba(0,0,0,.88));
+    }
+
+    #koba-bloom-root.k-video-presentation .k-buttons {
+        display: flex;
+        flex-direction: row;
+        padding: 2px 8px;
+        gap: 6px;
+    }
+
+    #koba-bloom-root.k-video-presentation .k-primary-transport,
+    #koba-bloom-root.k-video-presentation .k-actions {
+        width: auto;
+        flex: 1 1 auto;
+        border: 0;
+        padding: 0;
+    }
+
+    #koba-bloom-root.k-video-presentation .k-video-presentation-exit {
+        position: absolute;
+        z-index: 30;
+        top: calc(6px + var(--k-safe-top));
+        left: calc(8px + var(--k-safe-left));
+        display: grid;
+        place-items: center;
+        width: var(--k-touch-target);
+        height: var(--k-touch-target);
+        border: 1px solid rgba(255,255,255,.5);
+        border-radius: 50%;
+        background: rgba(0,0,0,.72);
+        color: #fff;
+        font: 700 28px/1 system-ui, sans-serif;
+        cursor: pointer;
+    }
+
+    #koba-bloom-root.k-video-presentation .k-bloom-sidebar,
+    #koba-bloom-root.k-video-presentation.k-chapter-menu-open .k-bloom-sidebar {
+        left: auto;
+        top: calc(8px + var(--k-safe-top));
+        right: calc(8px + var(--k-safe-right));
+        bottom: calc(8px + var(--k-safe-bottom));
+        width: min(42vw, 360px);
+        max-height: none;
+    }
+}
+
+/* Graceful degradation for constrained browsers. */
+@supports not (backdrop-filter: blur(1px)) {
+    .k-buttons,
+    .k-bloom-sidebar,
+    .k-bloom-back-to-store {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
     }
 }

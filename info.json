@@ -1,0 +1,12 @@
+{
+  "name": "KOBA-I Audio - Jubilee Edition",
+  "slug": "koba-i-audio",
+  "version": "6.1.0",
+  "download_url": "https://audio.koba-i.com/downloads/koba-i-audio-6.1.0.zip",
+  "requires": "6.0",
+  "tested": "7.0.3",
+  "sections": {
+    "description": "Version 6.1.0 adds standards-based illustrated reflowable EPUB presentation while preserving existing reader security, navigation, progress, and entitlement boundaries.",
+    "changelog": "Illustrated EPUB MVP: responsive embedded JPEG, PNG, GIF, and safely supported SVG presentation; contained cover-first reading view; preserved image order, aspect ratio, alt text, captions, and mobile overflow safeguards. Fixed-layout and pre-paginated EPUB rendering are not included."
+  }
+}
