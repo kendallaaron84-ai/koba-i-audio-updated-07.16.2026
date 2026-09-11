@@ -40,3 +40,18 @@ test("facing intent can force a deterministic single page", () => {
   const book = { illustratedPageSettings: { spreadStart: "left" }, chapters: [{ pages: [page("one", "right"), page("two")] }] };
   assert.equal(JSON.stringify(engine.orderedGroups(book, { width: 1920, height: 1080 }).map((group) => group.pages.length)), "[1,1]");
 });
+
+test("durable page identity survives earlier-page replacement and reorder", () => {
+  const original = { illustratedPageSettings: { spreadStart: "left", allowSpreads: false }, chapters: [{ id: "chapter-a", pages: [page("one"), page("two"), page("target"), page("four")] }] };
+  const progress = { chapterId: "chapter-a", pageId: "target", chapterPageIndex: 2 };
+  assert.equal(engine.locateProgress(engine.buildReaderPages(original, { width: 390, height: 844 }), progress), 2);
+  const changed = { ...original, chapters: [{ id: "chapter-a", pages: [page("replacement"), page("four"), page("target"), page("two")] }] };
+  assert.equal(engine.locateProgress(engine.buildReaderPages(changed, { width: 390, height: 844 }), progress), 2);
+});
+
+test("deleted page falls forward at its former chapter position, then clamps to chapter end", () => {
+  const book = { illustratedPageSettings: { spreadStart: "left", allowSpreads: false }, chapters: [{ id: "chapter-a", pages: [page("one"), page("two"), page("four")] }, { id: "chapter-b", pages: [page("five")] }] };
+  const presentations = engine.buildReaderPages(book, { width: 390, height: 844 });
+  assert.equal(engine.locateProgress(presentations, { chapterId: "chapter-a", pageId: "deleted", chapterPageIndex: 2 }), 2);
+  assert.equal(engine.locateProgress(presentations, { chapterId: "chapter-a", pageId: "deleted", chapterPageIndex: 99 }), 2);
+});

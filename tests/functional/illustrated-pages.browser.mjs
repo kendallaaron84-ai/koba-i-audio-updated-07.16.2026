@@ -17,13 +17,14 @@ const server = http.createServer((request, response) => {
   response.end(`<!doctype html><meta name="viewport" content="width=device-width"><style>html,body,#reader{margin:0;width:100%;height:100%;overflow:hidden}${styles}</style><div id="reader"></div><script>${engine}</script><script>
     const page = id => ({id,width:1200,height:1800,url:'/page.svg'});
     const book={layoutMode:'illustrated_pages',illustratedPageSettings:{spreadStart:'left',allowSpreads:true,pageBackground:'#111111'},chapters:[{id:'one',pages:[page('1'),page('2')]},{id:'two',pages:[page('3')]}]};
-    const reader=document.querySelector('#reader'); const built=KobaIllustratedPages.buildReaderPages(book,{width:innerWidth,height:innerHeight}); built.forEach(item=>reader.appendChild(item.node)); reader.dataset.groups=JSON.stringify(built.map(item=>item.node.children.length));
+    const reader=document.querySelector('#reader'); const built=KobaIllustratedPages.buildReaderPages(book,{width:innerWidth,height:innerHeight}); KobaIllustratedPages.maintainActiveWindow(built,0,'#111111'); reader.replaceChildren(built[0].node); reader.dataset.groups=JSON.stringify(built.map(item=>item.pages.length)); window.testState={reader,built};
   </script>`);
 });
 
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const address = server.address();
 const browser = await chromium.launch({ headless: true });
+const matrixEvidence = [];
 try {
   for (const viewport of [{ width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1366, height: 900 }, { width: 1920, height: 1080 }]) {
     const page = await browser.newPage({ viewport });
@@ -39,9 +40,23 @@ try {
     assert.equal(evidence.groups.at(-1), 1, "chapter boundary page must remain single");
     if (viewport.width <= 430) assert.deepEqual(evidence.groups, [1, 1, 1]);
     else assert.deepEqual(evidence.groups, [2, 1]);
+    const residency = await page.evaluate(async () => {
+      const makePage=id=>({id,width:2400,height:3600,url:'/page.svg'});
+      const largeBook={illustratedPageSettings:{spreadStart:'left',allowSpreads:true},chapters:[{id:'a',pages:Array.from({length:16},(_,i)=>makePage(`a-${i}`))},{id:'b',pages:Array.from({length:16},(_,i)=>makePage(`b-${i}`))}]};
+      const items=KobaIllustratedPages.buildReaderPages(largeBook,{width:innerWidth,height:innerHeight}); let maxResident=0;
+      const visit=index=>{ KobaIllustratedPages.maintainActiveWindow(items,index,'#111111'); window.testState.reader.replaceChildren(items[index].node); const resident=items.reduce((sum,item)=>sum+(item.node?.querySelectorAll('img').length||0),0); maxResident=Math.max(maxResident,resident); };
+      for(let index=0;index<items.length;index++) visit(index);
+      for(let index=items.length-1;index>=0;index--) visit(index);
+      return {totalPages:32,maxResident,hydratedPresentations:items.filter(item=>item.node).length,firstDisposed:items.length>3?items[0].node===null:true};
+    });
+    assert.equal(residency.totalPages, 32);
+    assert.ok(residency.maxResident <= 6, `bounded window held ${residency.maxResident} images`);
+    assert.ok(residency.hydratedPresentations <= 2);
+    assert.equal(residency.firstDisposed, false, "backward navigation must rehydrate the first presentation");
+    matrixEvidence.push({ viewport, groups: evidence.groups, residency });
     await page.close();
   }
-  console.log("Illustrated page browser matrix passed: 390px, tablet, laptop, desktop.");
+  console.log(`Illustrated page browser matrix passed: ${JSON.stringify(matrixEvidence)}`);
 } finally {
   await browser.close();
   server.close();

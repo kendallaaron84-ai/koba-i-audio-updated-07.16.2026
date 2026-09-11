@@ -1878,6 +1878,19 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         }
 
         function saveReaderProgress() {
+            if (illustratedBook) {
+                const presentation = readerPages[currentIndex];
+                const page = presentation?.pages?.[0];
+                if (!page || !presentation.chapterId || !page.id) return;
+                localStorage.setItem(progressKey, JSON.stringify({
+                    layoutMode: "illustrated_pages",
+                    chapterId: presentation.chapterId,
+                    pageId: String(page.id),
+                    chapterPageIndex: Number(page.chapterPageIndex) || 0,
+                    sectionIndex: currentIndex,
+                }));
+                return;
+            }
             localStorage.setItem(progressKey, JSON.stringify({
                 sectionIndex: currentIndex,
                 visualPage: currentVisualPage,
@@ -1974,6 +1987,14 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             if (!readerPages.length || isTransitioning) return;
             isTransitioning = true;
 
+            if (illustratedBook) {
+                window.KobaIllustratedPages.maintainActiveWindow(
+                    readerPages,
+                    currentIndex,
+                    illustratedBook.illustratedPageSettings?.pageBackground || "#111111"
+                );
+            }
+
             if (!reduceMotion) {
                 container.style.opacity = "0";
                 await new Promise(resolve => window.setTimeout(resolve, 150));
@@ -2046,7 +2067,14 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         let resizeTimer;
         function refreshIllustratedLayout() {
             if (!illustratedBook || !window.KobaIllustratedPages) return false;
-            const activePosition = Number(readerPages[currentIndex]?.node?.querySelector?.("[data-page-position]")?.dataset.pagePosition || 1);
+            const activePresentation = readerPages[currentIndex];
+            const activeProgress = activePresentation?.pages?.[0]
+                ? {
+                    chapterId: activePresentation.chapterId,
+                    pageId: String(activePresentation.pages[0].id || ""),
+                    chapterPageIndex: Number(activePresentation.pages[0].chapterPageIndex) || 0,
+                }
+                : null;
             const rebuilt = window.KobaIllustratedPages.buildReaderPages(illustratedBook, {
                 width: Math.max(1, container.clientWidth),
                 height: Math.max(1, container.clientHeight),
@@ -2055,9 +2083,11 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             if (signature === illustratedGroupSignature) return true;
             illustratedGroupSignature = signature;
             const coverOffset = readerPages[0]?.type === "cover" ? 1 : 0;
+            window.KobaIllustratedPages.maintainActiveWindow(readerPages, -10, "#111111");
             readerPages = coverOffset ? [readerPages[0], ...rebuilt] : rebuilt;
-            const destination = readerPages.findIndex(item => [...(item.node?.querySelectorAll?.("[data-page-position]") || [])].some(node => Number(node.dataset.pagePosition) === activePosition));
-            currentIndex = destination >= 0 ? destination : Math.min(currentIndex, readerPages.length - 1);
+            currentIndex = activeProgress
+                ? coverOffset + window.KobaIllustratedPages.locateProgress(rebuilt, activeProgress)
+                : 0;
             currentVisualPage = 0;
             void renderPage();
             return true;
@@ -2108,8 +2138,12 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                     if (!readerPages.length) throw new Error("This illustrated publication does not contain any available pages.");
                     settingsButton.hidden = true;
                     settingsPanel.hidden = true;
-                    const savedIndex = Number(JSON.parse(localStorage.getItem(progressKey) || "null")?.sectionIndex || 0);
-                    currentIndex = Number.isInteger(savedIndex) && savedIndex >= 0 && savedIndex < readerPages.length ? savedIndex : 0;
+                    let savedProgress = null;
+                    try { savedProgress = JSON.parse(localStorage.getItem(progressKey) || "null"); } catch (error) { savedProgress = null; }
+                    const coverOffset = readerPages[0]?.type === "cover" ? 1 : 0;
+                    currentIndex = savedProgress?.chapterId && savedProgress?.pageId
+                        ? coverOffset + window.KobaIllustratedPages.locateProgress(illustratedPages, savedProgress)
+                        : 0;
                     currentVisualPage = 0;
                     renderPage();
                     resetHUDTimeout();
