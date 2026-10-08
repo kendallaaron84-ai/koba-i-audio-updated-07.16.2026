@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 
 const source = await readFile(new URL("../assets/bloom-player.js", import.meta.url), "utf8");
+const plugin = await readFile(new URL("../koba-i-audio.php", import.meta.url), "utf8");
 
 function loadIntegrityApi() {
   const window = {
@@ -54,4 +55,17 @@ test("chapter order and transition behavior continue to use the authoritative ma
   assert.match(source, /chapters\.forEach\(\(c, i\) =>/);
   assert.match(source, /loadChapter\(currentIndex \+ 1, \{ autoplay: true \}\)/);
   assert.match(source, /if \(index < 0 \|\| index >= chapters\.length\) return/);
+});
+
+test("publish-vault resolves WordPress posts by immutable asset identity before slug", () => {
+  assert.match(plugin, /function koba_find_publication_post_by_asset_key/);
+  assert.match(plugin, /koba_resolve_existing_publication_post/);
+  assert.match(plugin, /expectedPublicationId/);
+  assert.match(plugin, /expectedPageId/);
+  assert.match(plugin, /publication_identity_conflict/);
+});
+
+test("publish-vault uses update semantics for a resolved identity", () => {
+  assert.match(plugin, /if \(\$pub_id > 0\)[\s\S]*?wp_update_post\(\$pub_data, true\)/);
+  assert.match(plugin, /if \(\$existing_page_id > 0\)[\s\S]*?wp_update_post\(\$page_data, true\)/);
 });

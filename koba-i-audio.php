@@ -222,6 +222,70 @@ add_action('rest_api_init', function () {
     ]);
 });
 
+function koba_find_publication_post_by_asset_key($asset_key, $post_type) {
+    $query = new WP_Query(array(
+        'post_type'      => $post_type,
+        'post_status'    => 'any',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+        'meta_query'     => array(
+            'relation' => 'OR',
+            array('key' => 'koba_asset_key', 'value' => $asset_key),
+            array('key' => 'assetKey', 'value' => $asset_key),
+            array('key' => '_koba_asset_key', 'value' => $asset_key),
+        ),
+    ));
+
+    return !empty($query->posts) ? (int) $query->posts[0] : 0;
+}
+
+function koba_resolve_existing_publication_post($expected_id, $asset_key, $post_type, $slug) {
+    if ($expected_id > 0) {
+        $expected_post = get_post($expected_id);
+        if (!$expected_post || $expected_post->post_type !== $post_type) {
+            return new WP_Error(
+                'publication_identity_conflict',
+                'The saved WordPress publication identity no longer resolves to the expected record.',
+                array('status' => 409)
+            );
+        }
+        $expected_asset_key = get_post_meta($expected_id, 'koba_asset_key', true);
+        if (!$expected_asset_key) {
+            $expected_asset_key = get_post_meta($expected_id, 'assetKey', true);
+        }
+        if ($expected_asset_key && $expected_asset_key !== $asset_key) {
+            return new WP_Error(
+                'publication_identity_conflict',
+                'The saved WordPress record belongs to a different publication.',
+                array('status' => 409)
+            );
+        }
+        return $expected_id;
+    }
+
+    $asset_post_id = koba_find_publication_post_by_asset_key($asset_key, $post_type);
+    if ($asset_post_id > 0) {
+        return $asset_post_id;
+    }
+
+    $slug_post = get_page_by_path($slug, OBJECT, $post_type);
+    if (!$slug_post) {
+        return 0;
+    }
+    $slug_asset_key = get_post_meta($slug_post->ID, 'koba_asset_key', true);
+    if (!$slug_asset_key) {
+        $slug_asset_key = get_post_meta($slug_post->ID, 'assetKey', true);
+    }
+    if ($slug_asset_key && $slug_asset_key !== $asset_key) {
+        return new WP_Error(
+            'publication_identity_conflict',
+            'The requested WordPress slug belongs to a different publication.',
+            array('status' => 409)
+        );
+    }
+    return (int) $slug_post->ID;
+}
+
 function koba_agent_create_vault_page($request) {
     $params = $request->get_json_params();
     
@@ -234,6 +298,8 @@ function koba_agent_create_vault_page($request) {
     $bg_image    = esc_url_raw($params['bgImageUrl'] ?? ($params['bgImage'] ?? ''));
     $media_type  = sanitize_text_field($params['type'] ?? 'audio');
     $price       = sanitize_text_field($params['price'] ?? '0.00');
+    $expected_publication_id = absint($params['expectedPublicationId'] ?? 0);
+    $expected_page_id = absint($params['expectedPageId'] ?? 0);
     
     if (empty($params['chapters'])) {
         if (!empty($params['studioTracks'])) {
@@ -269,14 +335,15 @@ function koba_agent_create_vault_page($request) {
         return new WP_Error('missing_data', 'Missing assetKey identifier.', array('status' => 400));
     }
 
-    $pub_query = new WP_Query(array(
-        'post_type'   => 'koba_publication',
-        'name'        => $book_slug,
-        'post_status' => 'any',
-        'posts_per_page' => 1
-    ));
-
-    $pub_id = 0;
+    $pub_id = koba_resolve_existing_publication_post(
+        $expected_publication_id,
+        $asset_key,
+        'koba_publication',
+        $book_slug
+    );
+    if (is_wp_error($pub_id)) {
+        return $pub_id;
+    }
     $pub_data = array(
         'post_title'  => $book_title,
         'post_status' => 'publish',
@@ -284,12 +351,14 @@ function koba_agent_create_vault_page($request) {
         'post_name'   => $book_slug
     );
 
-    if ($pub_query->have_posts()) {
-        $pub_id = $pub_query->posts[0]->ID;
+    if ($pub_id > 0) {
         $pub_data['ID'] = $pub_id;
-        wp_update_post($pub_data);
+        $pub_id = wp_update_post($pub_data, true);
     } else {
-        $pub_id = wp_insert_post($pub_data);
+        $pub_id = wp_insert_post($pub_data, true);
+    }
+    if (is_wp_error($pub_id)) {
+        return $pub_id;
     }
 
     update_post_meta($pub_id, 'koba_asset_key', $asset_key);
@@ -304,7 +373,15 @@ function koba_agent_create_vault_page($request) {
         update_post_meta($pub_id, '_koba_chapters_data', $ebook_data);
     }
 
-    $existing_page = get_page_by_path($book_slug, OBJECT, 'page');
+    $existing_page_id = koba_resolve_existing_publication_post(
+        $expected_page_id,
+        $asset_key,
+        'page',
+        $book_slug
+    );
+    if (is_wp_error($existing_page_id)) {
+        return $existing_page_id;
+    }
     $page_content = sprintf(
         '[koba_bloom_player asset="%s"]',
         esc_attr($asset_key)
@@ -318,11 +395,14 @@ function koba_agent_create_vault_page($request) {
         'post_name'    => $book_slug
     );
 
-    if ($existing_page) {
-        $page_data['ID'] = $existing_page->ID;
-        $page_id = wp_update_post($page_data);
+    if ($existing_page_id > 0) {
+        $page_data['ID'] = $existing_page_id;
+        $page_id = wp_update_post($page_data, true);
     } else {
-        $page_id = wp_insert_post($page_data);
+        $page_id = wp_insert_post($page_data, true);
+    }
+    if (is_wp_error($page_id)) {
+        return $page_id;
     }
 
     update_post_meta($page_id, 'assetKey', $asset_key);
