@@ -1,0 +1,66 @@
+name: KOBA-I plugin release gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "codex/**"
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: koba-plugin-release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php-and-regression:
+    name: PHP ${{ matrix.php }} and plugin regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.1", "8.2", "8.3"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Lint non-vendor PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do php -l "$file"; done < <(find . -path ./vendor -prune -o -name '*.php' -print0)
+      - name: Run source and contract regressions
+        run: node --test tests/*.test.mjs
+
+  illustrated-reader:
+    name: Packaged reader browser acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: tests/functional
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - run: npm run fixtures
+      - run: npm test
+      - run: node illustrated-pages.browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: illustrated-reader-evidence
+          path: tests/functional/evidence
+          if-no-files-found: error
