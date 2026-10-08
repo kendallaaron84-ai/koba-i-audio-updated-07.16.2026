@@ -76,6 +76,7 @@ $modules = [
     'includes/ajax.php',
     'includes/admin.php',
     'includes/security.php',
+    'includes/gateway-security.php',
     'includes/shortcodes-v2.php', 
     'includes/updater.php',
 ];
@@ -213,78 +214,14 @@ add_action('rest_api_init', function () {
     register_rest_route('kobai/v1', '/publish-vault', [
         'methods'             => 'POST',
         'callback'            => 'koba_agent_create_vault_page',
-        'permission_callback' => '__return_true' 
+        'permission_callback' => 'koba_authorize_gateway_publication_write'
     ]);
     register_rest_route('kobai/v1', '/update-chapter-audio', [
         'methods'             => 'POST',
         'callback'            => 'koba_agent_create_vault_page',
-        'permission_callback' => '__return_true' 
+        'permission_callback' => 'koba_authorize_gateway_publication_write'
     ]);
 });
-
-function koba_find_publication_post_by_asset_key($asset_key, $post_type) {
-    $query = new WP_Query(array(
-        'post_type'      => $post_type,
-        'post_status'    => 'any',
-        'posts_per_page' => 1,
-        'fields'         => 'ids',
-        'meta_query'     => array(
-            'relation' => 'OR',
-            array('key' => 'koba_asset_key', 'value' => $asset_key),
-            array('key' => 'assetKey', 'value' => $asset_key),
-            array('key' => '_koba_asset_key', 'value' => $asset_key),
-        ),
-    ));
-
-    return !empty($query->posts) ? (int) $query->posts[0] : 0;
-}
-
-function koba_resolve_existing_publication_post($expected_id, $asset_key, $post_type, $slug) {
-    if ($expected_id > 0) {
-        $expected_post = get_post($expected_id);
-        if (!$expected_post || $expected_post->post_type !== $post_type) {
-            return new WP_Error(
-                'publication_identity_conflict',
-                'The saved WordPress publication identity no longer resolves to the expected record.',
-                array('status' => 409)
-            );
-        }
-        $expected_asset_key = get_post_meta($expected_id, 'koba_asset_key', true);
-        if (!$expected_asset_key) {
-            $expected_asset_key = get_post_meta($expected_id, 'assetKey', true);
-        }
-        if ($expected_asset_key && $expected_asset_key !== $asset_key) {
-            return new WP_Error(
-                'publication_identity_conflict',
-                'The saved WordPress record belongs to a different publication.',
-                array('status' => 409)
-            );
-        }
-        return $expected_id;
-    }
-
-    $asset_post_id = koba_find_publication_post_by_asset_key($asset_key, $post_type);
-    if ($asset_post_id > 0) {
-        return $asset_post_id;
-    }
-
-    $slug_post = get_page_by_path($slug, OBJECT, $post_type);
-    if (!$slug_post) {
-        return 0;
-    }
-    $slug_asset_key = get_post_meta($slug_post->ID, 'koba_asset_key', true);
-    if (!$slug_asset_key) {
-        $slug_asset_key = get_post_meta($slug_post->ID, 'assetKey', true);
-    }
-    if ($slug_asset_key && $slug_asset_key !== $asset_key) {
-        return new WP_Error(
-            'publication_identity_conflict',
-            'The requested WordPress slug belongs to a different publication.',
-            array('status' => 409)
-        );
-    }
-    return (int) $slug_post->ID;
-}
 
 function koba_agent_create_vault_page($request) {
     $params = $request->get_json_params();

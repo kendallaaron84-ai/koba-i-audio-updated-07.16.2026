@@ -5,6 +5,8 @@ import vm from "node:vm";
 
 const source = await readFile(new URL("../assets/bloom-player.js", import.meta.url), "utf8");
 const plugin = await readFile(new URL("../koba-i-audio.php", import.meta.url), "utf8");
+const gatewaySecurity = await readFile(new URL("../includes/gateway-security.php", import.meta.url), "utf8");
+const publicationWriteSource = `${plugin}\n${gatewaySecurity}`;
 
 function loadIntegrityApi() {
   const window = {
@@ -58,11 +60,11 @@ test("chapter order and transition behavior continue to use the authoritative ma
 });
 
 test("publish-vault resolves WordPress posts by immutable asset identity before slug", () => {
-  assert.match(plugin, /function koba_find_publication_post_by_asset_key/);
-  assert.match(plugin, /koba_resolve_existing_publication_post/);
-  assert.match(plugin, /expectedPublicationId/);
-  assert.match(plugin, /expectedPageId/);
-  assert.match(plugin, /publication_identity_conflict/);
+  assert.match(publicationWriteSource, /function koba_find_publication_post_by_asset_key/);
+  assert.match(publicationWriteSource, /koba_resolve_existing_publication_post/);
+  assert.match(publicationWriteSource, /expectedPublicationId/);
+  assert.match(publicationWriteSource, /expectedPageId/);
+  assert.match(publicationWriteSource, /publication_identity_conflict/);
 });
 
 test("publish-vault uses update semantics for a resolved identity", () => {
