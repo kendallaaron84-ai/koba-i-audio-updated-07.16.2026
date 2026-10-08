@@ -298,8 +298,18 @@ function koba_agent_create_vault_page($request) {
     $bg_image    = esc_url_raw($params['bgImageUrl'] ?? ($params['bgImage'] ?? ''));
     $media_type  = sanitize_text_field($params['type'] ?? 'audio');
     $price       = sanitize_text_field($params['price'] ?? '0.00');
+    $publication_status = sanitize_key($params['status'] ?? 'published');
     $expected_publication_id = absint($params['expectedPublicationId'] ?? 0);
     $expected_page_id = absint($params['expectedPageId'] ?? 0);
+
+    if (!in_array($publication_status, array('draft', 'ready', 'published'), true)) {
+        return new WP_Error(
+            'invalid_publication_status',
+            'The publication status is invalid.',
+            array('status' => 400)
+        );
+    }
+    $wordpress_post_status = $publication_status === 'published' ? 'publish' : 'draft';
     
     if (empty($params['chapters'])) {
         if (!empty($params['studioTracks'])) {
@@ -346,7 +356,7 @@ function koba_agent_create_vault_page($request) {
     }
     $pub_data = array(
         'post_title'  => $book_title,
-        'post_status' => 'publish',
+        'post_status' => $wordpress_post_status,
         'post_type'   => 'koba_publication',
         'post_name'   => $book_slug
     );
@@ -368,6 +378,7 @@ function koba_agent_create_vault_page($request) {
     update_post_meta($pub_id, '_koba_bg_image_url', $bg_image);
     update_post_meta($pub_id, '_koba_media_type', $media_type);
     update_post_meta($pub_id, '_koba_price', $price);
+    update_post_meta($pub_id, '_koba_publication_status', $publication_status);
     
     if (!empty($ebook_data)) {
         update_post_meta($pub_id, '_koba_chapters_data', $ebook_data);
@@ -390,7 +401,7 @@ function koba_agent_create_vault_page($request) {
     $page_data = array(
         'post_title'   => $book_title,
         'post_content' => $page_content,
-        'post_status'  => 'publish',
+        'post_status'  => $wordpress_post_status,
         'post_type'    => 'page',
         'post_name'    => $book_slug
     );
@@ -411,6 +422,7 @@ function koba_agent_create_vault_page($request) {
     update_post_meta($page_id, '_koba_bg_image_url', $bg_image);
     update_post_meta($page_id, '_koba_media_type', $media_type);
     update_post_meta($page_id, '_koba_price', $price);
+    update_post_meta($page_id, '_koba_publication_status', $publication_status);
     if (!empty($ebook_data)) {
         update_post_meta($page_id, '_koba_chapters_data', $ebook_data);
     }

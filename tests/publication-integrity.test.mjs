@@ -69,3 +69,12 @@ test("publish-vault uses update semantics for a resolved identity", () => {
   assert.match(plugin, /if \(\$pub_id > 0\)[\s\S]*?wp_update_post\(\$pub_data, true\)/);
   assert.match(plugin, /if \(\$existing_page_id > 0\)[\s\S]*?wp_update_post\(\$page_data, true\)/);
 });
+
+test("draft and ready deployments remain private while published deployments become public", () => {
+  assert.match(plugin, /\$publication_status = sanitize_key\(\$params\['status'\] \?\? 'published'\)/);
+  assert.match(plugin, /in_array\(\$publication_status, array\('draft', 'ready', 'published'\), true\)/);
+  assert.match(plugin, /\$wordpress_post_status = \$publication_status === 'published' \? 'publish' : 'draft'/);
+  assert.match(plugin, /'post_status' => \$wordpress_post_status/);
+  assert.match(plugin, /'post_status'\s+=> \$wordpress_post_status/);
+  assert.match(plugin, /_koba_publication_status/);
+});
