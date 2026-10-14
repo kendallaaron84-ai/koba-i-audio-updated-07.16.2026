@@ -1755,7 +1755,11 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             if (!body) return;
             const sourceText = body.dataset.sourceText || body.textContent || "";
             body.dataset.sourceText = sourceText;
-            body.replaceChildren();
+
+            body.querySelectorAll("mark.koba-reader-highlight").forEach(mark => {
+                mark.replaceWith(document.createTextNode(mark.textContent || ""));
+            });
+            body.normalize();
 
             const highlights = annotations
                 .filter(item => item.type === "highlight" && Number(item.sectionIndex) === sectionIndex)
@@ -1763,18 +1767,38 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                 .filter(item => Number.isInteger(item.start) && Number.isInteger(item.end) && item.start >= 0 && item.end > item.start && item.end <= sourceText.length)
                 .sort((left, right) => left.start - right.start || left.end - right.end);
 
-            let cursor = 0;
-            highlights.forEach(highlight => {
-                if (highlight.start < cursor) return;
-                if (highlight.start > cursor) body.appendChild(document.createTextNode(sourceText.slice(cursor, highlight.start)));
-                const mark = document.createElement("mark");
-                mark.className = "koba-reader-highlight";
-                mark.dataset.annotationId = highlight.id;
-                mark.textContent = sourceText.slice(highlight.start, highlight.end);
-                body.appendChild(mark);
-                cursor = highlight.end;
+            if (!highlights.length) return;
+
+            const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+            const textNodes = [];
+            let globalOffset = 0;
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                const value = node.nodeValue || "";
+                textNodes.push({ node, value, start: globalOffset, end: globalOffset + value.length });
+                globalOffset += value.length;
+            }
+
+            textNodes.forEach(({ node, value, start, end }) => {
+                const intersections = highlights.filter(highlight => highlight.start < end && highlight.end > start);
+                if (!intersections.length) return;
+                const fragment = document.createDocumentFragment();
+                let cursor = 0;
+                intersections.forEach(highlight => {
+                    const localStart = Math.max(0, highlight.start - start);
+                    const localEnd = Math.min(value.length, highlight.end - start);
+                    if (localStart < cursor || localEnd <= localStart) return;
+                    if (localStart > cursor) fragment.appendChild(document.createTextNode(value.slice(cursor, localStart)));
+                    const mark = document.createElement("mark");
+                    mark.className = "koba-reader-highlight";
+                    mark.dataset.annotationId = highlight.id;
+                    mark.textContent = value.slice(localStart, localEnd);
+                    fragment.appendChild(mark);
+                    cursor = localEnd;
+                });
+                if (cursor < value.length) fragment.appendChild(document.createTextNode(value.slice(cursor)));
+                node.replaceWith(fragment);
             });
-            if (cursor < sourceText.length) body.appendChild(document.createTextNode(sourceText.slice(cursor)));
         }
 
         function selectionOffset(body, node, offset) {

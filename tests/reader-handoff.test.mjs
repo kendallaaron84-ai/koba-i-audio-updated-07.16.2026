@@ -101,3 +101,14 @@ test("canonical reader handoff coexists with shortcode, activation, catalog, aud
   assert.match(php, /koba-reader-handoff-js/);
   assert.doesNotMatch(php, /\/api\/auth\/sms-|Send Access Code|Sovereign Vault Gateway/i);
 });
+
+test("annotation rendering preserves illustrated EPUB structure", async () => {
+  const php = await readFile(new URL("koba-i-audio.php", pluginRoot), "utf8");
+  const start = php.indexOf("function applyHighlights(sectionIndex)");
+  const source = php.slice(start, php.indexOf("function selectionOffset", start));
+  assert.ok(start > -1);
+  assert.doesNotMatch(source, /body\.replaceChildren\(\)/);
+  assert.match(source, /document\.createTreeWalker\(body, NodeFilter\.SHOW_TEXT\)/);
+  assert.match(source, /mark\.replaceWith\(document\.createTextNode/);
+  assert.match(source, /node\.replaceWith\(fragment\)/);
+});
