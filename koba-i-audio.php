@@ -1528,6 +1528,8 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         settingsButton.className = "koba-reader-settings-button";
         settingsButton.textContent = "Aa";
         settingsButton.setAttribute("aria-label", "Adjust composition styles");
+        settingsButton.setAttribute("aria-controls", "koba-reader-settings-panel");
+        settingsButton.setAttribute("aria-expanded", "false");
         settingsButton.style.cssText = "background:#1f2937; color:#fff; border:1px solid #374151; width:42px; height:42px; border-radius:6px; cursor:pointer; font-size:16px; font-weight:700; justify-self:center;";
 
         const fullscreenButton = document.createElement("button");
@@ -1547,9 +1549,12 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         navTray.append(previousButton, pageIndicator, settingsButton, fullscreenButton, nextButton);
 
         const settingsPanel = document.createElement("div");
+        settingsPanel.id = "koba-reader-settings-panel";
         settingsPanel.classList.add("koba-reader-settings");
         settingsPanel.hidden = true;
-        settingsPanel.style.cssText = "width:min(82vw, 920px); box-sizing:border-box; padding:16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:14px; background:rgba(15,20,28,.96); border:1px solid #273244; border-radius:10px; font-family:system-ui,sans-serif; color:#fff; margin-top:2px; box-shadow:0 8px 24px rgba(0,0,0,0.3); opacity:0; transition: opacity 200ms ease-in-out; z-index:90;";
+        settingsPanel.inert = true;
+        settingsPanel.setAttribute("aria-hidden", "true");
+        settingsPanel.style.cssText = "width:min(82vw, 920px); box-sizing:border-box; padding:16px; display:none; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:14px; background:rgba(15,20,28,.96); border:1px solid #273244; border-radius:10px; font-family:system-ui,sans-serif; color:#fff; margin-top:2px; box-shadow:0 8px 24px rgba(0,0,0,0.3); opacity:0; pointer-events:none; transition: opacity 200ms ease-in-out; z-index:90;";
 
         function createSettingGroup(labelText) {
             const group = document.createElement("label");
@@ -1628,7 +1633,10 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
         function showHUD() {
             navTray.style.opacity = "1"; navTray.style.pointerEvents = "auto";
-            if (!settingsPanel.hidden) { settingsPanel.style.opacity = "1"; settingsPanel.style.pointerEvents = "auto"; }
+            if (!settingsPanel.hidden && settingsPanel.getAttribute("aria-hidden") !== "true") {
+                settingsPanel.style.opacity = "1";
+                settingsPanel.style.pointerEvents = "auto";
+            }
             resetHUDTimeout();
         }
 
@@ -1641,6 +1649,53 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             clearTimeout(hudIdleTimeout);
             if (settingsPanel.hidden && !hudHasFocus()) { hudIdleTimeout = setTimeout(hideHUD, 3000); }
         }
+
+        // KOBA_READER_SETTINGS_STATE_START
+        let settingsCloseTimeout = null;
+
+        function openSettingsPanel() {
+            window.clearTimeout(settingsCloseTimeout);
+            settingsCloseTimeout = null;
+            settingsPanel.hidden = false;
+            settingsPanel.inert = false;
+            settingsPanel.setAttribute("aria-hidden", "false");
+            settingsPanel.style.display = "grid";
+            settingsPanel.style.pointerEvents = "auto";
+            settingsButton.setAttribute("aria-expanded", "true");
+            void settingsPanel.offsetHeight;
+            settingsPanel.style.opacity = "1";
+        }
+
+        function closeSettingsPanel({ immediate = false, restoreFocus = true } = {}) {
+            window.clearTimeout(settingsCloseTimeout);
+            settingsCloseTimeout = null;
+            settingsPanel.style.opacity = "0";
+            settingsPanel.style.pointerEvents = "none";
+            settingsPanel.inert = true;
+            settingsPanel.setAttribute("aria-hidden", "true");
+            settingsButton.setAttribute("aria-expanded", "false");
+
+            if (settingsPanel.contains(document.activeElement)) {
+                if (restoreFocus && !settingsButton.hidden) {
+                    settingsButton.focus({ preventScroll: true });
+                } else if (typeof document.activeElement.blur === "function") {
+                    document.activeElement.blur();
+                }
+            }
+
+            const finishClose = () => {
+                settingsPanel.hidden = true;
+                settingsPanel.style.display = "none";
+                settingsCloseTimeout = null;
+            };
+
+            if (immediate) {
+                finishClose();
+            } else {
+                settingsCloseTimeout = window.setTimeout(finishClose, 200);
+            }
+        }
+        // KOBA_READER_SETTINGS_STATE_END
 
         function saveAnnotations() {
             localStorage.setItem(annotationKey, JSON.stringify(annotations));
@@ -2169,7 +2224,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                     readerPages.push(...illustratedPages);
                     if (!readerPages.length) throw new Error("This illustrated publication does not contain any available pages.");
                     settingsButton.hidden = true;
-                    settingsPanel.hidden = true;
+                    closeSettingsPanel({ immediate: true, restoreFocus: false });
                     let savedProgress = null;
                     try { savedProgress = JSON.parse(localStorage.getItem(progressKey) || "null"); } catch (error) { savedProgress = null; }
                     const coverOffset = readerPages[0]?.type === "cover" ? 1 : 0;
@@ -2322,10 +2377,10 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
         settingsButton.addEventListener("click", (event) => {
             event.stopPropagation();
-            if (settingsPanel.hidden) {
-                settingsPanel.hidden = false; void settingsPanel.offsetHeight; settingsPanel.style.opacity = "1";
+            if (settingsPanel.hidden || settingsPanel.getAttribute("aria-hidden") === "true") {
+                openSettingsPanel();
             } else {
-                settingsPanel.style.opacity = "0"; setTimeout(() => { settingsPanel.hidden = true; }, 200);
+                closeSettingsPanel();
             }
             resetHUDTimeout();
         });

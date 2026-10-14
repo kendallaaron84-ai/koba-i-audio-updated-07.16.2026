@@ -1,0 +1,353 @@
+{
+  "status": "PASS",
+  "baseline": {
+    "commit": "080bb05a256600e5bb398f0542e186402e561f56",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "originalValue": "18",
+    "mutatedValue": "26",
+    "closedHit": "font-size",
+    "fadePointerEvents": "auto"
+  },
+  "fixedMatrix": [
+    {
+      "viewport": {
+        "name": "phone-390-portrait",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      "initialClosed": {
+        "hidden": true,
+        "inert": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "hitId": "reading-surface",
+        "panelSize": {
+          "width": 0,
+          "height": 0
+        }
+      },
+      "intentionalOpen": {
+        "display": "grid",
+        "pointerEvents": "auto",
+        "fontHit": "font-size",
+        "fontSizeAfterDrag": "26",
+        "preferenceEventCount": 2,
+        "lineHeightAfterKeyboard": "2",
+        "keyboardFocus": "line-height"
+      },
+      "immediateClose": {
+        "hidden": false,
+        "inert": true,
+        "ariaHidden": "true",
+        "pointerEvents": "none",
+        "hitId": "reading-surface",
+        "focus": "settings-button",
+        "lineHeightAfterBlockedKeyboard": "2",
+        "focusAfterBlockedKeyboard": "settings-button",
+        "fontSizeAfterBlockedDrag": "18"
+      },
+      "finalClosed": {
+        "hidden": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "fontSizeAfter25Swipes": "18",
+        "lineHeightAfter25Swipes": "2",
+        "progressPreserved": true,
+        "annotationsPreserved": true
+      }
+    },
+    {
+      "viewport": {
+        "name": "phone-390-landscape",
+        "width": 844,
+        "height": 390,
+        "touch": true
+      },
+      "initialClosed": {
+        "hidden": true,
+        "inert": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "hitId": "",
+        "panelSize": {
+          "width": 0,
+          "height": 0
+        }
+      },
+      "intentionalOpen": {
+        "display": "grid",
+        "pointerEvents": "auto",
+        "fontHit": "font-size",
+        "fontSizeAfterDrag": "26",
+        "preferenceEventCount": 2,
+        "lineHeightAfterKeyboard": "2",
+        "keyboardFocus": "line-height"
+      },
+      "immediateClose": {
+        "hidden": false,
+        "inert": true,
+        "ariaHidden": "true",
+        "pointerEvents": "none",
+        "hitId": "",
+        "focus": "settings-button",
+        "lineHeightAfterBlockedKeyboard": "2",
+        "focusAfterBlockedKeyboard": "settings-button",
+        "fontSizeAfterBlockedDrag": "18"
+      },
+      "finalClosed": {
+        "hidden": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "fontSizeAfter25Swipes": "18",
+        "lineHeightAfter25Swipes": "2",
+        "progressPreserved": true,
+        "annotationsPreserved": true
+      }
+    },
+    {
+      "viewport": {
+        "name": "phone-430-portrait",
+        "width": 430,
+        "height": 932,
+        "touch": true
+      },
+      "initialClosed": {
+        "hidden": true,
+        "inert": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "hitId": "reading-surface",
+        "panelSize": {
+          "width": 0,
+          "height": 0
+        }
+      },
+      "intentionalOpen": {
+        "display": "grid",
+        "pointerEvents": "auto",
+        "fontHit": "font-size",
+        "fontSizeAfterDrag": "26",
+        "preferenceEventCount": 2,
+        "lineHeightAfterKeyboard": "2",
+        "keyboardFocus": "line-height"
+      },
+      "immediateClose": {
+        "hidden": false,
+        "inert": true,
+        "ariaHidden": "true",
+        "pointerEvents": "none",
+        "hitId": "reading-surface",
+        "focus": "settings-button",
+        "lineHeightAfterBlockedKeyboard": "2",
+        "focusAfterBlockedKeyboard": "settings-button",
+        "fontSizeAfterBlockedDrag": "18"
+      },
+      "finalClosed": {
+        "hidden": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "fontSizeAfter25Swipes": "18",
+        "lineHeightAfter25Swipes": "2",
+        "progressPreserved": true,
+        "annotationsPreserved": true
+      }
+    },
+    {
+      "viewport": {
+        "name": "phone-430-landscape",
+        "width": 932,
+        "height": 430,
+        "touch": true
+      },
+      "initialClosed": {
+        "hidden": true,
+        "inert": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "hitId": "",
+        "panelSize": {
+          "width": 0,
+          "height": 0
+        }
+      },
+      "intentionalOpen": {
+        "display": "grid",
+        "pointerEvents": "auto",
+        "fontHit": "font-size",
+        "fontSizeAfterDrag": "26",
+        "preferenceEventCount": 2,
+        "lineHeightAfterKeyboard": "2",
+        "keyboardFocus": "line-height"
+      },
+      "immediateClose": {
+        "hidden": false,
+        "inert": true,
+        "ariaHidden": "true",
+        "pointerEvents": "none",
+        "hitId": "",
+        "focus": "settings-button",
+        "lineHeightAfterBlockedKeyboard": "2",
+        "focusAfterBlockedKeyboard": "settings-button",
+        "fontSizeAfterBlockedDrag": "18"
+      },
+      "finalClosed": {
+        "hidden": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "fontSizeAfter25Swipes": "18",
+        "lineHeightAfter25Swipes": "2",
+        "progressPreserved": true,
+        "annotationsPreserved": true
+      }
+    },
+    {
+      "viewport": {
+        "name": "tablet-768-portrait",
+        "width": 768,
+        "height": 1024,
+        "touch": true
+      },
+      "initialClosed": {
+        "hidden": true,
+        "inert": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "hitId": "reading-surface",
+        "panelSize": {
+          "width": 0,
+          "height": 0
+        }
+      },
+      "intentionalOpen": {
+        "display": "grid",
+        "pointerEvents": "auto",
+        "fontHit": "font-size",
+        "fontSizeAfterDrag": "26",
+        "preferenceEventCount": 2,
+        "lineHeightAfterKeyboard": "2",
+        "keyboardFocus": "line-height"
+      },
+      "immediateClose": {
+        "hidden": false,
+        "inert": true,
+        "ariaHidden": "true",
+        "pointerEvents": "none",
+        "hitId": "",
+        "focus": "settings-button",
+        "lineHeightAfterBlockedKeyboard": "2",
+        "focusAfterBlockedKeyboard": "settings-button",
+        "fontSizeAfterBlockedDrag": "18"
+      },
+      "finalClosed": {
+        "hidden": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "fontSizeAfter25Swipes": "18",
+        "lineHeightAfter25Swipes": "2",
+        "progressPreserved": true,
+        "annotationsPreserved": true
+      }
+    },
+    {
+      "viewport": {
+        "name": "tablet-768-landscape",
+        "width": 1024,
+        "height": 768,
+        "touch": true
+      },
+      "initialClosed": {
+        "hidden": true,
+        "inert": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "hitId": "reading-surface",
+        "panelSize": {
+          "width": 0,
+          "height": 0
+        }
+      },
+      "intentionalOpen": {
+        "display": "grid",
+        "pointerEvents": "auto",
+        "fontHit": "font-size",
+        "fontSizeAfterDrag": "26",
+        "preferenceEventCount": 2,
+        "lineHeightAfterKeyboard": "2",
+        "keyboardFocus": "line-height"
+      },
+      "immediateClose": {
+        "hidden": false,
+        "inert": true,
+        "ariaHidden": "true",
+        "pointerEvents": "none",
+        "hitId": "",
+        "focus": "settings-button",
+        "lineHeightAfterBlockedKeyboard": "2",
+        "focusAfterBlockedKeyboard": "settings-button",
+        "fontSizeAfterBlockedDrag": "18"
+      },
+      "finalClosed": {
+        "hidden": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "fontSizeAfter25Swipes": "18",
+        "lineHeightAfter25Swipes": "2",
+        "progressPreserved": true,
+        "annotationsPreserved": true
+      }
+    },
+    {
+      "viewport": {
+        "name": "desktop-1024",
+        "width": 1024,
+        "height": 768,
+        "touch": false
+      },
+      "initialClosed": {
+        "hidden": true,
+        "inert": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "hitId": "reading-surface",
+        "panelSize": {
+          "width": 0,
+          "height": 0
+        }
+      },
+      "intentionalOpen": {
+        "display": "grid",
+        "pointerEvents": "auto",
+        "fontHit": "font-size",
+        "fontSizeAfterDrag": "26",
+        "preferenceEventCount": 2,
+        "lineHeightAfterKeyboard": "2",
+        "keyboardFocus": "line-height"
+      },
+      "immediateClose": {
+        "hidden": false,
+        "inert": true,
+        "ariaHidden": "true",
+        "pointerEvents": "none",
+        "hitId": "",
+        "focus": "settings-button",
+        "lineHeightAfterBlockedKeyboard": "2",
+        "focusAfterBlockedKeyboard": "settings-button",
+        "fontSizeAfterBlockedDrag": "18"
+      },
+      "finalClosed": {
+        "hidden": true,
+        "display": "none",
+        "pointerEvents": "none",
+        "fontSizeAfter25Swipes": "18",
+        "lineHeightAfter25Swipes": "2",
+        "progressPreserved": true,
+        "annotationsPreserved": true
+      }
+    }
+  ],
+  "physicalDeviceGate": "REQUIRED_BEFORE_RELEASE"
+}

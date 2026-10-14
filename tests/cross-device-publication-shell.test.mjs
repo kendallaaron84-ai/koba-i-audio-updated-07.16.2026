@@ -51,6 +51,20 @@ test("reader shell has reading-first controls, thresholded swipe, and portrait-f
   assert.match(plugin, /font-size: max\(16px, var\(--koba-reader-size\)\)/);
 });
 
+test("closed reader settings are removed from pointer and keyboard interaction", async () => {
+  const { plugin } = await sources();
+
+  assert.match(plugin, /settingsPanel\.style\.cssText = "[^"]*display:none;[^"]*pointer-events:none;/);
+  assert.match(plugin, /settingsPanel\.inert = true/);
+  assert.match(plugin, /settingsPanel\.setAttribute\("aria-hidden", "true"\)/);
+  assert.match(plugin, /settingsButton\.setAttribute\("aria-expanded", "false"\)/);
+  assert.match(plugin, /function openSettingsPanel\(\)[\s\S]*settingsPanel\.inert = false;[\s\S]*settingsPanel\.style\.display = "grid"/);
+  assert.match(plugin, /function closeSettingsPanel[\s\S]*settingsPanel\.style\.pointerEvents = "none";[\s\S]*settingsPanel\.inert = true/);
+  assert.match(plugin, /if \(!settingsPanel\.hidden && settingsPanel\.getAttribute\("aria-hidden"\) !== "true"\)/);
+  assert.match(plugin, /settingsCloseTimeout = window\.setTimeout\(finishClose, 200\)/);
+  assert.doesNotMatch(plugin, /touch-action:\s*none/);
+});
+
 test("legacy and security-sensitive player paths remain outside this layout change", async () => {
   const { player, plugin } = await sources();
 

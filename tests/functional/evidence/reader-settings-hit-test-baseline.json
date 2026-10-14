@@ -1,0 +1,121 @@
+{
+  "status": "CLOSED_STATE_CASCADE_DEFECT_REPRODUCED",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "closed": {
+    "hidden": true,
+    "display": "grid",
+    "pointerEvents": "auto",
+    "panelRect": {
+      "left": 10,
+      "top": 655,
+      "right": 380,
+      "bottom": 732
+    },
+    "rangeRect": {
+      "left": 28,
+      "top": 698,
+      "right": 362,
+      "bottom": 714
+    },
+    "pageRect": {
+      "left": 10,
+      "top": 62,
+      "right": 380,
+      "bottom": 766
+    },
+    "hitId": "font-size",
+    "hitTag": "INPUT",
+    "value": "18",
+    "events": []
+  },
+  "open": {
+    "hidden": false,
+    "display": "grid",
+    "pointerEvents": "auto",
+    "panelRect": {
+      "left": 10,
+      "top": 655,
+      "right": 380,
+      "bottom": 732
+    },
+    "rangeRect": {
+      "left": 28,
+      "top": 698,
+      "right": 362,
+      "bottom": 714
+    },
+    "pageRect": {
+      "left": 10,
+      "top": 62,
+      "right": 380,
+      "bottom": 766
+    },
+    "hitId": "font-size",
+    "hitTag": "INPUT",
+    "value": "18",
+    "events": []
+  },
+  "afterSwipe": {
+    "hidden": false,
+    "display": "grid",
+    "pointerEvents": "auto",
+    "panelRect": {
+      "left": 10,
+      "top": 655,
+      "right": 380,
+      "bottom": 732
+    },
+    "rangeRect": {
+      "left": 28,
+      "top": 698,
+      "right": 362,
+      "bottom": 714
+    },
+    "pageRect": {
+      "left": 10,
+      "top": 62,
+      "right": 380,
+      "bottom": 766
+    },
+    "hitId": "font-size",
+    "hitTag": "INPUT",
+    "value": "26",
+    "events": [
+      "14",
+      "26"
+    ]
+  },
+  "duringFade": {
+    "hidden": false,
+    "display": "grid",
+    "pointerEvents": "auto",
+    "panelRect": {
+      "left": 10,
+      "top": 655,
+      "right": 380,
+      "bottom": 732
+    },
+    "rangeRect": {
+      "left": 28,
+      "top": 698,
+      "right": 362,
+      "bottom": 714
+    },
+    "pageRect": {
+      "left": 10,
+      "top": 62,
+      "right": 380,
+      "bottom": 766
+    },
+    "hitId": "font-size",
+    "hitTag": "INPUT",
+    "value": "26",
+    "events": [
+      "14",
+      "26"
+    ]
+  }
+}
