@@ -2014,6 +2014,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
         async function renderPage() {
             if (!readerPages.length || isTransitioning) return;
+            window.KobaIllustratedPages?.closeExpandedViewer?.({ restoreFocus: false });
             isTransitioning = true;
 
             if (illustratedBook) {
@@ -2097,13 +2098,15 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         function refreshIllustratedLayout() {
             if (!illustratedBook || !window.KobaIllustratedPages) return false;
             const activePresentation = readerPages[currentIndex];
-            const activeProgress = activePresentation?.pages?.[0]
+            const expandedIdentity = window.KobaIllustratedPages.getExpandedViewerIdentity?.();
+            const activeProgress = expandedIdentity || (activePresentation?.pages?.[0]
                 ? {
                     chapterId: activePresentation.chapterId,
                     pageId: String(activePresentation.pages[0].id || ""),
                     chapterPageIndex: Number(activePresentation.pages[0].chapterPageIndex) || 0,
                 }
-                : null;
+                : null);
+            window.KobaIllustratedPages.closeExpandedViewer?.({ restoreFocus: false });
             const rebuilt = window.KobaIllustratedPages.buildReaderPages(illustratedBook, {
                 width: Math.max(1, container.clientWidth),
                 height: Math.max(1, container.clientHeight),
@@ -2335,6 +2338,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
         function showNextPage() {
             if (isTransitioning) return;
+            if (window.KobaIllustratedPages?.closeExpandedViewer?.()) return;
             if (currentVisualPage < currentVisualPageCount - 1) {
                 currentVisualPage += 1;
                 scrollToCurrentVisualPage();
@@ -2351,6 +2355,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
         function showPreviousPage() {
             if (isTransitioning) return;
+            if (window.KobaIllustratedPages?.closeExpandedViewer?.()) return;
             if (currentVisualPage > 0) {
                 currentVisualPage -= 1;
                 scrollToCurrentVisualPage();

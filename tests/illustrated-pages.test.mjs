@@ -14,6 +14,9 @@ test("approved presentation constants are fixed", () => {
   assert.equal(engine.MIN_SPREAD_PAGE_HEIGHT, 480);
   assert.equal(engine.MIN_SPREAD_PAGE_WIDTH, 320);
   assert.equal(engine.SPREAD_GUTTER, 16);
+  assert.equal(engine.EXPANDED_ZOOM_MIN, 1);
+  assert.equal(engine.EXPANDED_ZOOM_MAX, 5);
+  assert.equal(engine.EXPANDED_ZOOM_STEP, 0.25);
 });
 
 test("phone widths fall back to single-page containment", () => {
