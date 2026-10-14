@@ -7,16 +7,26 @@
       "after"
     ],
     "currentVisualPage": 0,
-    "currentVisualPageCount": 3,
+    "currentVisualPageCount": 5,
     "currentContentAnchor": {
       "blockIndex": 0,
       "fragmentIndex": 0
     },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 0,
+      "contentAnchor": {
+        "blockIndex": 0,
+        "fragmentIndex": 0
+      }
+    },
     "elementPages": {
       "before": 0,
       "illustration": 1,
-      "after": 2
+      "afterFirst": 2,
+      "afterLast": 4
     },
+    "afterFragmentCount": 3,
     "image": {
       "count": 1,
       "complete": true,
@@ -40,17 +50,27 @@
       "illustration",
       "after"
     ],
-    "currentVisualPage": 2,
-    "currentVisualPageCount": 3,
+    "currentVisualPage": 4,
+    "currentVisualPageCount": 5,
     "currentContentAnchor": {
       "blockIndex": 2,
-      "fragmentIndex": 0
+      "fragmentIndex": 2
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 4,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 2
+      }
     },
     "elementPages": {
       "before": 0,
       "illustration": 1,
-      "after": 2
+      "afterFirst": 2,
+      "afterLast": 4
     },
+    "afterFragmentCount": 3,
     "image": {
       "count": 1,
       "complete": true,
@@ -74,17 +94,27 @@
       "illustration",
       "after"
     ],
-    "currentVisualPage": 0,
-    "currentVisualPageCount": 1,
+    "currentVisualPage": 2,
+    "currentVisualPageCount": 7,
     "currentContentAnchor": {
       "blockIndex": 2,
-      "fragmentIndex": 0
+      "fragmentIndex": 2
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 2,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 2
+      }
     },
     "elementPages": {
       "before": 0,
       "illustration": 0,
-      "after": 0
+      "afterFirst": 0,
+      "afterLast": 6
     },
+    "afterFragmentCount": 7,
     "image": {
       "count": 1,
       "complete": true,
@@ -108,17 +138,27 @@
       "illustration",
       "after"
     ],
-    "currentVisualPage": 0,
-    "currentVisualPageCount": 1,
+    "currentVisualPage": 2,
+    "currentVisualPageCount": 3,
     "currentContentAnchor": {
       "blockIndex": 2,
-      "fragmentIndex": 0
+      "fragmentIndex": 2
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 2,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 2
+      }
     },
     "elementPages": {
       "before": 0,
       "illustration": 0,
-      "after": 0
+      "afterFirst": 0,
+      "afterLast": 2
     },
+    "afterFragmentCount": 3,
     "image": {
       "count": 1,
       "complete": true,
@@ -142,17 +182,71 @@
       "illustration",
       "after"
     ],
-    "currentVisualPage": 2,
-    "currentVisualPageCount": 3,
+    "currentVisualPage": 4,
+    "currentVisualPageCount": 5,
     "currentContentAnchor": {
       "blockIndex": 2,
-      "fragmentIndex": 0
+      "fragmentIndex": 2
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 4,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 2
+      }
     },
     "elementPages": {
       "before": 0,
       "illustration": 1,
-      "after": 2
+      "afterFirst": 2,
+      "afterLast": 4
     },
+    "afterFragmentCount": 3,
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "delayedImage": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 4,
+    "currentVisualPageCount": 5,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 2
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 4,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 2
+      }
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "afterFirst": 2,
+      "afterLast": 4
+    },
+    "afterFragmentCount": 3,
     "image": {
       "count": 1,
       "complete": true,
@@ -176,17 +270,27 @@
       "illustration",
       "after"
     ],
-    "currentVisualPage": 2,
-    "currentVisualPageCount": 3,
+    "currentVisualPage": 4,
+    "currentVisualPageCount": 7,
     "currentContentAnchor": {
       "blockIndex": 2,
-      "fragmentIndex": 0
+      "fragmentIndex": 2
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 4,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 2
+      }
     },
     "elementPages": {
       "before": 0,
       "illustration": 1,
-      "after": 2
+      "afterFirst": 2,
+      "afterLast": 6
     },
+    "afterFragmentCount": 5,
     "image": {
       "count": 1,
       "complete": true,
@@ -210,17 +314,203 @@
       "illustration",
       "after"
     ],
-    "currentVisualPage": 0,
-    "currentVisualPageCount": 1,
+    "currentVisualPage": 3,
+    "currentVisualPageCount": 5,
     "currentContentAnchor": {
       "blockIndex": 2,
-      "fragmentIndex": 0
+      "fragmentIndex": 2
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 3,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 2
+      }
     },
     "elementPages": {
       "before": 0,
       "illustration": 0,
-      "after": 0
+      "afterFirst": 1,
+      "afterLast": 4
     },
+    "afterFragmentCount": 4,
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "legacy": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 1,
+    "currentVisualPageCount": 7,
+    "currentContentAnchor": {
+      "blockIndex": 1,
+      "fragmentIndex": 0
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 1,
+      "contentAnchor": {
+        "blockIndex": 1,
+        "fragmentIndex": 0
+      }
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "afterFirst": 2,
+      "afterLast": 6
+    },
+    "afterFragmentCount": 5,
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "malformed": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 1,
+    "currentVisualPageCount": 7,
+    "currentContentAnchor": {
+      "blockIndex": 1,
+      "fragmentIndex": 0
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 1,
+      "contentAnchor": {
+        "blockIndex": 1,
+        "fragmentIndex": 0
+      }
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "afterFirst": 2,
+      "afterLast": 6
+    },
+    "afterFragmentCount": 5,
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "missingBlock": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 1,
+    "currentVisualPageCount": 7,
+    "currentContentAnchor": {
+      "blockIndex": 1,
+      "fragmentIndex": 0
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 1,
+      "contentAnchor": {
+        "blockIndex": 1,
+        "fragmentIndex": 0
+      }
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "afterFirst": 2,
+      "afterLast": 6
+    },
+    "afterFragmentCount": 5,
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "oversizedFragment": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 6,
+    "currentVisualPageCount": 7,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 4
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 6,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 4
+      }
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "afterFirst": 2,
+      "afterLast": 6
+    },
+    "afterFragmentCount": 5,
     "image": {
       "count": 1,
       "complete": true,

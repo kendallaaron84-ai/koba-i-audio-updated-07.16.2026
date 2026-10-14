@@ -2146,7 +2146,13 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                     Math.max(0, Math.round(paginatedNode.scrollLeft / pageWidth))
                 );
                 scrollToCurrentVisualPage("smooth");
-                currentContentAnchor = contentAnchorForVisualPage(paginatedNode);
+                // A compressed one-page layout cannot express which logical block was
+                // selected before reflow. Retain that anchor until the content spans
+                // multiple visual pages again; otherwise the scroll event caused by
+                // programmatic reflow would always replace it with the first block.
+                if (currentVisualPageCount > 1 || !normalizedContentAnchor(currentContentAnchor)) {
+                    currentContentAnchor = contentAnchorForVisualPage(paginatedNode);
+                }
                 updateReaderControls();
                 saveReaderProgress();
             };
