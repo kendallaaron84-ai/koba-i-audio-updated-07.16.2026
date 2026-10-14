@@ -1,0 +1,241 @@
+{
+  "status": "PASS",
+  "desktop": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 0,
+    "currentVisualPageCount": 3,
+    "currentContentAnchor": {
+      "blockIndex": 0,
+      "fragmentIndex": 0
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "after": 2
+    },
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "positioned": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 2,
+    "currentVisualPageCount": 3,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 0
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "after": 2
+    },
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "mobile": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 0,
+    "currentVisualPageCount": 1,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 0
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 0,
+      "after": 0
+    },
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 333.984375,
+      "height": 187.96875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "tablet": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 0,
+    "currentVisualPageCount": 1,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 0
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 0,
+      "after": 0
+    },
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 658.96875,
+      "height": 370.875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "returnedDesktop": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 2,
+    "currentVisualPageCount": 3,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 0
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "after": 2
+    },
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "enlarged": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 2,
+    "currentVisualPageCount": 3,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 0
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "after": 2
+    },
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "fullscreenLike": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 0,
+    "currentVisualPageCount": 1,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 0
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 0,
+      "after": 0
+    },
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  }
+}

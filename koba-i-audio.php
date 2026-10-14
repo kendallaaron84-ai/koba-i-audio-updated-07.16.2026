@@ -1452,6 +1452,8 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         let currentIndex = 0;
         let currentVisualPage = 0;
         let currentVisualPageCount = 1;
+        let currentContentAnchor = null;
+        let restoreContentAnchorOnNextMeasure = false;
         let isTransitioning = false;
         let hudIdleTimeout;
         let annotationSelection = null;
@@ -2031,6 +2033,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             localStorage.setItem(progressKey, JSON.stringify({
                 sectionIndex: currentIndex,
                 visualPage: currentVisualPage,
+                ...(currentContentAnchor ? { contentAnchor: currentContentAnchor } : {}),
             }));
         }
 
@@ -2045,6 +2048,49 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             return node?.classList?.contains("koba-reader-paginated") ? node : null;
         }
 
+        // KOBA_REFLOWABLE_CONTENT_ANCHOR_START
+        function normalizedContentAnchor(value) {
+            const blockIndex = Number(value?.blockIndex);
+            const fragmentIndex = Number(value?.fragmentIndex);
+            return Number.isInteger(blockIndex) && blockIndex >= 0 && Number.isInteger(fragmentIndex) && fragmentIndex >= 0
+                ? { blockIndex, fragmentIndex }
+                : null;
+        }
+
+        function paginatedContentBlocks(paginatedNode = activePaginatedNode()) {
+            const body = paginatedNode?.querySelector?.(".koba-reader-copy");
+            return body ? [...body.children].filter(node => node instanceof HTMLElement) : [];
+        }
+
+        function rectVisualPage(rect, paginatedNode, pageWidth) {
+            const pageRect = paginatedNode.getBoundingClientRect();
+            return Math.max(0, Math.floor((rect.left - pageRect.left + paginatedNode.scrollLeft + 1) / pageWidth));
+        }
+
+        function contentAnchorForVisualPage(paginatedNode = activePaginatedNode()) {
+            if (!paginatedNode) return null;
+            const pageWidth = Math.max(1, paginatedNode.clientWidth);
+            const blocks = paginatedContentBlocks(paginatedNode);
+            for (let blockIndex = 0; blockIndex < blocks.length; blockIndex += 1) {
+                const rects = [...blocks[blockIndex].getClientRects()];
+                const fragmentIndex = rects.findIndex(rect => rectVisualPage(rect, paginatedNode, pageWidth) === currentVisualPage);
+                if (fragmentIndex >= 0) return { blockIndex, fragmentIndex };
+            }
+            return null;
+        }
+
+        function visualPageForContentAnchor(anchor, paginatedNode = activePaginatedNode()) {
+            const normalized = normalizedContentAnchor(anchor);
+            if (!normalized || !paginatedNode) return null;
+            const block = paginatedContentBlocks(paginatedNode)[normalized.blockIndex];
+            if (!block) return null;
+            const rects = [...block.getClientRects()];
+            if (!rects.length) return null;
+            const fragment = rects[Math.min(normalized.fragmentIndex, rects.length - 1)];
+            return rectVisualPage(fragment, paginatedNode, Math.max(1, paginatedNode.clientWidth));
+        }
+        // KOBA_REFLOWABLE_CONTENT_ANCHOR_END
+
         function scrollToCurrentVisualPage(behavior = "smooth") {
             const paginatedNode = activePaginatedNode();
             if (!paginatedNode) return;
@@ -2056,12 +2102,14 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             });
         }
 
-        function measureActivePagination() {
+        function measureActivePagination(options = {}) {
             if (!readerPages.length) return;
             const paginatedNode = activePaginatedNode();
             if (!paginatedNode) {
                 currentVisualPage = 0;
                 currentVisualPageCount = 1;
+                currentContentAnchor = null;
+                restoreContentAnchorOnNextMeasure = false;
                 updateReaderControls();
                 saveReaderProgress();
                 return;
@@ -2070,8 +2118,19 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             paginatedNode.style.columnWidth = `${pageWidth}px`;
             paginatedNode.style.columnGap = "0px";
             currentVisualPageCount = Math.max(1, Math.round(paginatedNode.scrollWidth / pageWidth));
-            currentVisualPage = Math.min(Math.max(0, currentVisualPage), currentVisualPageCount - 1);
+            const shouldRestoreAnchor = options.preserveContentAnchor === true || restoreContentAnchorOnNextMeasure;
+            const preservedAnchor = shouldRestoreAnchor ? normalizedContentAnchor(currentContentAnchor) : null;
+            const anchoredVisualPage = shouldRestoreAnchor
+                ? visualPageForContentAnchor(preservedAnchor, paginatedNode)
+                : null;
+            currentVisualPage = Number.isInteger(anchoredVisualPage)
+                ? Math.min(Math.max(0, anchoredVisualPage), currentVisualPageCount - 1)
+                : Math.min(Math.max(0, currentVisualPage), currentVisualPageCount - 1);
+            restoreContentAnchorOnNextMeasure = false;
             scrollToCurrentVisualPage("auto");
+            currentContentAnchor = Number.isInteger(anchoredVisualPage) && preservedAnchor
+                ? preservedAnchor
+                : contentAnchorForVisualPage(paginatedNode);
             updateReaderControls();
             saveReaderProgress();
         }
@@ -2087,6 +2146,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                     Math.max(0, Math.round(paginatedNode.scrollLeft / pageWidth))
                 );
                 scrollToCurrentVisualPage("smooth");
+                currentContentAnchor = contentAnchorForVisualPage(paginatedNode);
                 updateReaderControls();
                 saveReaderProgress();
             };
@@ -2256,12 +2316,14 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         }
         window.addEventListener("resize", () => {
             window.clearTimeout(resizeTimer);
-            resizeTimer = window.setTimeout(() => { if (!refreshIllustratedLayout()) measureActivePagination(); }, 120);
+            restoreContentAnchorOnNextMeasure = true;
+            resizeTimer = window.setTimeout(() => { if (!refreshIllustratedLayout()) measureActivePagination({ preserveContentAnchor: true }); }, 120);
         }, { passive: true });
         if ("ResizeObserver" in window) {
             const readerResizeObserver = new ResizeObserver(() => {
                 window.clearTimeout(resizeTimer);
-                resizeTimer = window.setTimeout(() => { if (!refreshIllustratedLayout()) measureActivePagination(); }, 80);
+                restoreContentAnchorOnNextMeasure = true;
+                resizeTimer = window.setTimeout(() => { if (!refreshIllustratedLayout()) measureActivePagination({ preserveContentAnchor: true }); }, 80);
             });
             readerResizeObserver.observe(container);
         }
@@ -2344,6 +2406,8 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                     if (parsedProgress && typeof parsedProgress === "object") {
                         savedSectionIndex = Number(parsedProgress.sectionIndex) || 0;
                         savedVisualPage = Number(parsedProgress.visualPage) || 0;
+                        currentContentAnchor = normalizedContentAnchor(parsedProgress.contentAnchor);
+                        restoreContentAnchorOnNextMeasure = currentContentAnchor !== null;
                     } else if (Number.isInteger(parsedProgress)) {
                         savedSectionIndex = parsedProgress;
                     }
@@ -2398,6 +2462,8 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         }
 
         function applyReaderPreferences(save = true) {
+            currentContentAnchor = contentAnchorForVisualPage() || currentContentAnchor;
+            restoreContentAnchorOnNextMeasure = currentContentAnchor !== null;
             const themeColors = {
                 "#fffdf7": "#221f1a",
                 "#ffffff": "#111111",
@@ -2417,7 +2483,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
             viewportCard.dataset.readerTheme = selectedBg === "#1f2933" ? "dark" : "light";
             if (save) saveReaderPreferences();
-            if (readerPages.length) window.setTimeout(measureActivePagination, 0);
+            if (readerPages.length) window.setTimeout(() => measureActivePagination({ preserveContentAnchor: true }), 0);
         }
 
         async function toggleFullscreenMode() {
@@ -2447,7 +2513,8 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             } else {
                 viewportCard.style.removeProperty("height");
             }
-            window.setTimeout(measureActivePagination, 100);
+            restoreContentAnchorOnNextMeasure = true;
+            window.setTimeout(() => measureActivePagination({ preserveContentAnchor: true }), 100);
             showHUD();
         });
 
@@ -2475,6 +2542,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             if (currentVisualPage < currentVisualPageCount - 1) {
                 currentVisualPage += 1;
                 scrollToCurrentVisualPage();
+                currentContentAnchor = contentAnchorForVisualPage();
                 updateReaderControls();
                 saveReaderProgress();
                 return;
@@ -2482,6 +2550,8 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             if (currentIndex < readerPages.length - 1) {
                 currentIndex += 1;
                 currentVisualPage = 0;
+                currentContentAnchor = null;
+                restoreContentAnchorOnNextMeasure = false;
                 renderPage();
             }
         }
@@ -2492,6 +2562,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             if (currentVisualPage > 0) {
                 currentVisualPage -= 1;
                 scrollToCurrentVisualPage();
+                currentContentAnchor = contentAnchorForVisualPage();
                 updateReaderControls();
                 saveReaderProgress();
                 return;
@@ -2499,6 +2570,8 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             if (currentIndex > 0) {
                 currentIndex -= 1;
                 currentVisualPage = Number.MAX_SAFE_INTEGER;
+                currentContentAnchor = null;
+                restoreContentAnchorOnNextMeasure = false;
                 renderPage();
             }
         }
