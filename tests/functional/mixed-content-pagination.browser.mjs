@@ -137,6 +137,13 @@ try {
     assert.ok(positioned.currentContentAnchor.fragmentIndex >= 1);
     const selectedAnchor={...positioned.currentContentAnchor};
 
+    const onePage = await page.evaluate(() => window.resizeThroughProduction(1100,4000));
+    assert.equal(onePage.currentVisualPageCount,1,"fixture must exercise the exact one-page settle branch");
+    assert.deepEqual(onePage.currentContentAnchor,selectedAnchor,"one-page scroll settle must retain the selected logical anchor");
+    const onePageReturn = await page.evaluate(() => window.resizeThroughProduction(808,520));
+    assert.equal(onePageReturn.currentVisualPage,onePageReturn.elementPages.afterLast,"return from one page must restore the selected Paragraph Two fragment");
+    assert.deepEqual(onePageReturn.currentContentAnchor,selectedAnchor);
+
     const mobile = await page.evaluate(() => window.resizeThroughProduction(334,620));
     assert.deepEqual(mobile.currentContentAnchor,selectedAnchor,"real scroll debounce must not replace the logical anchor in a compressed layout");
     assert.deepEqual(mobile.order,["before","illustration","after"]);
@@ -178,7 +185,7 @@ try {
     const oversizedFragment = await page.evaluate(() => window.exerciseFallback({blockIndex:2,fragmentIndex:999},0));
     assert.equal(oversizedFragment.currentVisualPage,oversizedFragment.elementPages.afterLast,"oversized fragment must clamp to the block's final fragment");
 
-    evidence={status:"PASS",desktop,positioned,mobile,tablet,returnedDesktop,delayedImage,enlarged,fullscreenLike,legacy,malformed,missingBlock,oversizedFragment};
+    evidence={status:"PASS",desktop,positioned,onePage,onePageReturn,mobile,tablet,returnedDesktop,delayedImage,enlarged,fullscreenLike,legacy,malformed,missingBlock,oversizedFragment};
   } finally { await context.close(); }
 } finally {
   await browser.close();
@@ -187,4 +194,4 @@ try {
 
 const evidencePath=path.join(here,"evidence","mixed-content-pagination.json");
 fs.writeFileSync(evidencePath,`${JSON.stringify(evidence,null,2)}\n`);
-console.log(`MIXED_CONTENT_PAGINATION_PASS: ${JSON.stringify({anchor:evidence.positioned.currentContentAnchor,mobileAnchor:evidence.mobile.currentContentAnchor,returnedPage:evidence.returnedDesktop.currentVisualPage,legacyPage:evidence.legacy.currentVisualPage})}`);
+console.log(`MIXED_CONTENT_PAGINATION_PASS: ${JSON.stringify({anchor:evidence.positioned.currentContentAnchor,onePageCount:evidence.onePage.currentVisualPageCount,onePageAnchor:evidence.onePage.currentContentAnchor,returnedPage:evidence.onePageReturn.currentVisualPage,legacyPage:evidence.legacy.currentVisualPage})}`);

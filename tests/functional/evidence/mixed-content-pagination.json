@@ -88,6 +88,94 @@
     },
     "overflow": false
   },
+  "onePage": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 0,
+    "currentVisualPageCount": 1,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 2
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 0,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 2
+      }
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 0,
+      "afterFirst": 0,
+      "afterLast": 0
+    },
+    "afterFragmentCount": 1,
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
+  "onePageReturn": {
+    "order": [
+      "before",
+      "illustration",
+      "after"
+    ],
+    "currentVisualPage": 4,
+    "currentVisualPageCount": 5,
+    "currentContentAnchor": {
+      "blockIndex": 2,
+      "fragmentIndex": 2
+    },
+    "lastSavedProgress": {
+      "sectionIndex": 0,
+      "visualPage": 4,
+      "contentAnchor": {
+        "blockIndex": 2,
+        "fragmentIndex": 2
+      }
+    },
+    "elementPages": {
+      "before": 0,
+      "illustration": 1,
+      "afterFirst": 2,
+      "afterLast": 4
+    },
+    "afterFragmentCount": 3,
+    "image": {
+      "count": 1,
+      "complete": true,
+      "naturalWidth": 1672,
+      "naturalHeight": 941,
+      "width": 759.984375,
+      "height": 427.71875,
+      "objectFit": "contain"
+    },
+    "figure": {
+      "rectCount": 1,
+      "breakInside": "avoid",
+      "captionParent": "illustration",
+      "captionCount": 1
+    },
+    "overflow": false
+  },
   "mobile": {
     "order": [
       "before",
