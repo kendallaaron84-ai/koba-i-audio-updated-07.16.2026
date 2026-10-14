@@ -19,6 +19,10 @@ assert.match(productionReader, /illustratedGroupSignature = illustratedPages\.ma
 assert.doesNotMatch(productionReader, /item\.node\.children\.length/);
 assert.match(productionReader, /getExpandedViewerIdentity\?\.\(\)/);
 assert.match(productionReader, /closeExpandedViewer\?\.\(\{ restoreFocus: false \}\)/);
+assert.match(productionReader, /activeIllustratedPageIdentity/);
+assert.match(productionReader, /resolveIllustratedPageIdentity/);
+assert.match(productionReader, /focusPageTrigger\?\.\(options\.focusIdentity\)/);
+assert.match(productionReader, /preferredIllustratedIdentity: activeProgress/);
 assert.match(productionReader, /function showNextPage\(\)[\s\S]*?closeExpandedViewer\?\.\(\)\) return/);
 assert.match(productionReader, /function showPreviousPage\(\)[\s\S]*?closeExpandedViewer\?\.\(\)\) return/);
 assert.match(styles, /\.koba-illustrated-zoom-viewport[\s\S]*?touch-action: none/);
@@ -42,15 +46,18 @@ const server = http.createServer((request, response) => {
     let built=KobaIllustratedPages.buildReaderPages(book,{width:reader.clientWidth||innerWidth,height:reader.clientHeight||innerHeight});
     let signature=built.map(item=>item.pages.length).join(',');
     let currentIndex=0;
-    const saveProgress=()=>{ const presentation=built[currentIndex]; const page=presentation?.pages?.[0]; if(page) localStorage.setItem('test_progress',JSON.stringify({layoutMode:'illustrated_pages',chapterId:presentation.chapterId,pageId:String(page.id),chapterPageIndex:Number(page.chapterPageIndex)||0})); };
-    const render=()=>{ KobaIllustratedPages.maintainActiveWindow(built,currentIndex,'#111111'); reader.replaceChildren(built[currentIndex].node); saveProgress(); };
-    const refresh=()=>{ const active=built[currentIndex]; const expandedIdentity=KobaIllustratedPages.getExpandedViewerIdentity(); const progress=expandedIdentity||(active?.pages?.[0]?{chapterId:active.chapterId,pageId:String(active.pages[0].id),chapterPageIndex:Number(active.pages[0].chapterPageIndex)||0}:null); KobaIllustratedPages.closeExpandedViewer({restoreFocus:false}); const rebuilt=KobaIllustratedPages.buildReaderPages(book,{width:reader.clientWidth||innerWidth,height:reader.clientHeight||innerHeight}); const nextSignature=rebuilt.map(item=>item.pages.length).join(','); if(nextSignature!==signature){ KobaIllustratedPages.maintainActiveWindow(built,-10,'#111111'); built=rebuilt; signature=nextSignature; currentIndex=progress?KobaIllustratedPages.locateProgress(rebuilt,progress):0; render(); } };
-    document.querySelector('#previous').addEventListener('click',()=>{ currentIndex=Math.max(0,currentIndex-1); render(); });
-    document.querySelector('#next').addEventListener('click',()=>{ currentIndex=Math.min(built.length-1,currentIndex+1); render(); });
+    let selectedIdentity=null;
+    const resolveIdentity=(presentation,preferred)=>{ const exact=presentation?.chapterId===preferred?.chapterId?presentation.pages.find(page=>String(page.id)===String(preferred.pageId)):null; const page=exact||presentation?.pages?.[0]; return page?{chapterId:presentation.chapterId,pageId:String(page.id),chapterPageIndex:Number(page.chapterPageIndex)||0}:null; };
+    const saveProgress=()=>{ selectedIdentity=resolveIdentity(built[currentIndex],selectedIdentity); if(selectedIdentity) localStorage.setItem('test_progress',JSON.stringify({layoutMode:'illustrated_pages',...selectedIdentity})); };
+    const render=({preferredIdentity=selectedIdentity,focusIdentity=null}={})=>{ KobaIllustratedPages.maintainActiveWindow(built,currentIndex,'#111111'); reader.replaceChildren(built[currentIndex].node); selectedIdentity=resolveIdentity(built[currentIndex],preferredIdentity); saveProgress(); if(focusIdentity) KobaIllustratedPages.focusPageTrigger(focusIdentity); };
+    addEventListener('koba:illustrated-page-selected',event=>{ selectedIdentity=resolveIdentity(built[currentIndex],event.detail); saveProgress(); });
+    const refresh=()=>{ const active=built[currentIndex]; const expandedIdentity=KobaIllustratedPages.getExpandedViewerIdentity(); const progress=expandedIdentity||resolveIdentity(active,selectedIdentity); KobaIllustratedPages.closeExpandedViewer({restoreFocus:false}); const rebuilt=KobaIllustratedPages.buildReaderPages(book,{width:reader.clientWidth||innerWidth,height:reader.clientHeight||innerHeight}); const nextSignature=rebuilt.map(item=>item.pages.length).join(','); if(nextSignature===signature){selectedIdentity=progress;saveProgress();if(expandedIdentity)KobaIllustratedPages.focusPageTrigger(expandedIdentity);return;} KobaIllustratedPages.maintainActiveWindow(built,-10,'#111111'); built=rebuilt; signature=nextSignature; currentIndex=progress?KobaIllustratedPages.locateProgress(rebuilt,progress):0; selectedIdentity=progress; render({preferredIdentity:progress,focusIdentity:expandedIdentity?progress:null}); };
+    document.querySelector('#previous').addEventListener('click',()=>{ currentIndex=Math.max(0,currentIndex-1); selectedIdentity=null; render(); });
+    document.querySelector('#next').addEventListener('click',()=>{ currentIndex=Math.min(built.length-1,currentIndex+1); selectedIdentity=null; render(); });
     document.querySelector('#fullscreen').addEventListener('click',()=>readerShell.requestFullscreen());
     addEventListener('keydown',event=>{ const tag=document.activeElement?.tagName?.toLowerCase(); if(tag==='input'||tag==='textarea'||tag==='select'||document.activeElement?.isContentEditable)return; if(event.key==='ArrowRight'){event.preventDefault();currentIndex=Math.min(built.length-1,currentIndex+1);render();} if(event.key==='ArrowLeft'){event.preventDefault();currentIndex=Math.max(0,currentIndex-1);render();} });
     addEventListener('resize',refresh);
-    render(); reader.dataset.groups=JSON.stringify(built.map(item=>item.pages.length)); window.testState={reader,get built(){return built},get currentIndex(){return currentIndex},refresh};
+    render(); reader.dataset.groups=JSON.stringify(built.map(item=>item.pages.length)); window.testState={reader,get built(){return built},get currentIndex(){return currentIndex},get selectedIdentity(){return selectedIdentity},refresh};
   </script>`);
 });
 
@@ -79,8 +86,15 @@ try {
     const selectedPageId = viewport.width > 430 ? "2" : "1";
     const trigger = page.locator(`.koba-illustrated-page-expand[data-page-id='${selectedPageId}']`);
     await trigger.focus();
-    const progressBeforeZoom = await page.evaluate(() => localStorage.getItem("test_progress"));
+    const progressBeforeSelection = await page.evaluate(() => localStorage.getItem("test_progress"));
     await trigger.click();
+    const progressAfterSelection = await page.evaluate(() => localStorage.getItem("test_progress"));
+    if (viewport.width > 430) {
+      assert.notEqual(progressAfterSelection, progressBeforeSelection, "selecting the right plate must promote its durable identity");
+    } else {
+      assert.equal(progressAfterSelection, progressBeforeSelection, "reselecting the current single page must preserve its durable identity");
+    }
+    assert.equal(JSON.parse(progressAfterSelection).pageId, selectedPageId);
     const opened = await page.evaluate(() => ({
       dialogCount: document.querySelectorAll(".koba-illustrated-zoom-overlay[role='dialog'][aria-modal='true']").length,
       pageId: document.querySelector(".koba-illustrated-zoom-overlay")?.dataset.pageId,
@@ -178,7 +192,7 @@ try {
 
     const expandedRatio = await page.locator(".koba-illustrated-zoom-surface img").evaluate(image => ({ natural: image.naturalWidth / image.naturalHeight, declared: image.width / image.height }));
     assert.ok(Math.abs(expandedRatio.natural - expandedRatio.declared) < 0.001, "expanded illustration must preserve its intrinsic aspect ratio");
-    assert.equal(await page.evaluate(() => localStorage.getItem("test_progress")), progressBeforeZoom, "zoom and pan must not mutate durable reading progress");
+    assert.equal(await page.evaluate(() => localStorage.getItem("test_progress")), progressAfterSelection, "zoom and pan must not mutate progress after the page selection is recorded");
 
     await page.keyboard.press("Escape");
     const closed = await page.evaluate(() => ({
@@ -196,7 +210,7 @@ try {
     assert.equal(closed.stageHidden, false);
     assert.equal(closed.focusedPageId, selectedPageId, "closing must restore focus to the exact durable page identity");
     assert.equal(closed.currentIndex, 0);
-    assert.equal(closed.progress, progressBeforeZoom);
+    assert.equal(closed.progress, progressAfterSelection);
     assert.equal(await page.locator(".koba-reader-shell img").count(), evidence.images.length, "closing must release the one expanded image node immediately");
     assert.equal(await page.evaluate(() => Object.values(localStorage).every(value => !value.includes('/page.svg'))), true, "authorized media URLs must never become progress or preference keys");
 
@@ -234,11 +248,30 @@ try {
     activePageIds: window.testState.built[window.testState.currentIndex].pageIds,
     progress: JSON.parse(localStorage.getItem('test_progress')),
     expandedImages: document.querySelectorAll('.koba-illustrated-zoom-surface img').length,
+    focusedPageId: document.activeElement?.dataset?.pageId,
   }));
   assert.equal(regrouped.dialogCount, 0, "orientation regroup must teardown the old expanded DOM before disposing its presentation");
   assert.deepEqual(regrouped.activePageIds, ["2"], "orientation regroup must resume the selected right-page identity, not pages[0]");
   assert.equal(regrouped.progress.pageId, "2");
   assert.equal(regrouped.expandedImages, 0);
+  assert.equal(regrouped.focusedPageId, "2", "orientation regroup must restore focus to the rebuilt trigger for the selected page");
+
+  await identityPage.locator(".koba-illustrated-page-expand[data-page-id='2']").click();
+  await identityPage.setViewportSize({ width: 1366, height: 900 });
+  await identityPage.evaluate(() => window.testState.refresh());
+  const reverseRegrouped = await identityPage.evaluate(() => ({
+    dialogCount: document.querySelectorAll('.koba-illustrated-zoom-overlay').length,
+    activePageIds: window.testState.built[window.testState.currentIndex].pageIds,
+    selectedIdentity: window.testState.selectedIdentity,
+    progress: JSON.parse(localStorage.getItem('test_progress')),
+    focusedPageId: document.activeElement?.dataset?.pageId,
+  }));
+  assert.equal(reverseRegrouped.dialogCount, 0);
+  assert.deepEqual(reverseRegrouped.activePageIds, ["1", "2"], "single-to-spread regroup must rebuild the original spread");
+  assert.equal(reverseRegrouped.selectedIdentity.pageId, "2", "single-to-spread regroup must retain the right-hand page identity");
+  assert.equal(reverseRegrouped.progress.pageId, "2", "single-to-spread regroup must persist the right-hand page, not pages[0]");
+  assert.equal(reverseRegrouped.focusedPageId, "2", "single-to-spread regroup must restore focus to the right-hand page trigger");
+
   await identityPage.locator(".koba-illustrated-page-expand[data-page-id='2']").click();
   await identityPage.keyboard.press("Escape");
   assert.equal(await identityPage.evaluate(() => document.activeElement?.dataset?.pageId), "2");

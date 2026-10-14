@@ -54,6 +54,16 @@
             .find(button => button.dataset.chapterId === chapterId && button.dataset.pageId === pageId) || null;
     }
 
+    function focusPageTrigger(identity, options = {}) {
+        const chapterId = String(identity?.chapterId || "");
+        const pageId = String(identity?.pageId || "");
+        if (!chapterId || !pageId) return false;
+        const target = findPageTrigger(chapterId, pageId);
+        if (!target) return false;
+        target.focus({ preventScroll: options.preventScroll !== false });
+        return document.activeElement === target;
+    }
+
     function closeExpandedViewer(options = {}) {
         const state = expandedViewer;
         if (!state) return false;
@@ -419,6 +429,13 @@
         };
         function handleResize() { window.requestAnimationFrame(() => renderTransform(false)); }
         expandedViewer = state;
+        global.dispatchEvent(new global.CustomEvent("koba:illustrated-page-selected", {
+            detail: Object.freeze({
+                chapterId: state.chapterId,
+                pageId: state.pageId,
+                chapterPageIndex: state.chapterPageIndex,
+            }),
+        }));
         overlayHost.appendChild(overlay);
         document.body.classList.add("koba-illustrated-zoom-open");
         document.body.style.overflow = "hidden";
@@ -545,5 +562,6 @@
         locateProgress,
         closeExpandedViewer,
         getExpandedViewerIdentity,
+        focusPageTrigger,
     });
 })(window);

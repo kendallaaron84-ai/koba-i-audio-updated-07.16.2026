@@ -1453,6 +1453,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         let annotations = [];
         let illustratedBook = null;
         let illustratedGroupSignature = "";
+        let activeIllustratedPageIdentity = null;
 
         try {
             const savedAnnotations = JSON.parse(localStorage.getItem(annotationKey) || "[]");
@@ -1961,16 +1962,39 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             page.append(heading, body); return page;
         }
 
+        function resolveIllustratedPageIdentity(presentation, preferredIdentity = null) {
+            if (!presentation?.chapterId || !Array.isArray(presentation.pages) || !presentation.pages.length) return null;
+            const preferredChapterId = String(preferredIdentity?.chapterId || "");
+            const preferredPageId = String(preferredIdentity?.pageId || "");
+            const exactPage = preferredChapterId === String(presentation.chapterId) && preferredPageId
+                ? presentation.pages.find(page => String(page?.id || "") === preferredPageId)
+                : null;
+            const page = exactPage || presentation.pages[0];
+            if (!page?.id) return null;
+            return {
+                chapterId: String(presentation.chapterId),
+                pageId: String(page.id),
+                chapterPageIndex: Number(page.chapterPageIndex) || 0,
+            };
+        }
+
+        function setActiveIllustratedPageIdentity(preferredIdentity = activeIllustratedPageIdentity) {
+            activeIllustratedPageIdentity = resolveIllustratedPageIdentity(
+                readerPages[currentIndex],
+                preferredIdentity
+            );
+            return activeIllustratedPageIdentity;
+        }
+
         function saveReaderProgress() {
             if (illustratedBook) {
-                const presentation = readerPages[currentIndex];
-                const page = presentation?.pages?.[0];
-                if (!page || !presentation.chapterId || !page.id) return;
+                const identity = setActiveIllustratedPageIdentity();
+                if (!identity) return;
                 localStorage.setItem(progressKey, JSON.stringify({
                     layoutMode: "illustrated_pages",
-                    chapterId: presentation.chapterId,
-                    pageId: String(page.id),
-                    chapterPageIndex: Number(page.chapterPageIndex) || 0,
+                    chapterId: identity.chapterId,
+                    pageId: identity.pageId,
+                    chapterPageIndex: identity.chapterPageIndex,
                     sectionIndex: currentIndex,
                 }));
                 return;
@@ -1980,6 +2004,12 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                 visualPage: currentVisualPage,
             }));
         }
+
+        window.addEventListener("koba:illustrated-page-selected", event => {
+            if (!illustratedBook) return;
+            const identity = setActiveIllustratedPageIdentity(event.detail || null);
+            if (identity) saveReaderProgress();
+        });
 
         function activePaginatedNode() {
             const node = readerPages[currentIndex]?.node;
@@ -2067,7 +2097,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             paginatedNode.addEventListener("touchend", () => window.setTimeout(captureAnnotationSelection, 50), { passive: true });
         }
 
-        async function renderPage() {
+        async function renderPage(options = {}) {
             if (!readerPages.length || isTransitioning) return;
             window.KobaIllustratedPages?.closeExpandedViewer?.({ restoreFocus: false });
             isTransitioning = true;
@@ -2088,9 +2118,17 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             const activePage = readerPages[currentIndex];
             applyHighlights(currentIndex);
             container.replaceChildren(activePage.node);
+            if (illustratedBook) {
+                setActiveIllustratedPageIdentity(
+                    options.preferredIllustratedIdentity || activeIllustratedPageIdentity
+                );
+            }
             bindActivePaginationEvents();
             await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             measureActivePagination();
+            if (options.focusIdentity) {
+                window.KobaIllustratedPages?.focusPageTrigger?.(options.focusIdentity);
+            }
 
             if (!reduceMotion) {
                 requestAnimationFrame(() => { container.style.opacity = "1"; });
@@ -2154,20 +2192,24 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             if (!illustratedBook || !window.KobaIllustratedPages) return false;
             const activePresentation = readerPages[currentIndex];
             const expandedIdentity = window.KobaIllustratedPages.getExpandedViewerIdentity?.();
-            const activeProgress = expandedIdentity || (activePresentation?.pages?.[0]
-                ? {
-                    chapterId: activePresentation.chapterId,
-                    pageId: String(activePresentation.pages[0].id || ""),
-                    chapterPageIndex: Number(activePresentation.pages[0].chapterPageIndex) || 0,
-                }
-                : null);
+            const activeProgress = expandedIdentity || resolveIllustratedPageIdentity(
+                activePresentation,
+                activeIllustratedPageIdentity
+            );
             window.KobaIllustratedPages.closeExpandedViewer?.({ restoreFocus: false });
             const rebuilt = window.KobaIllustratedPages.buildReaderPages(illustratedBook, {
                 width: Math.max(1, container.clientWidth),
                 height: Math.max(1, container.clientHeight),
             });
             const signature = rebuilt.map(item => item.pages.length).join(",");
-            if (signature === illustratedGroupSignature) return true;
+            if (signature === illustratedGroupSignature) {
+                activeIllustratedPageIdentity = activeProgress;
+                saveReaderProgress();
+                if (expandedIdentity) {
+                    window.KobaIllustratedPages.focusPageTrigger?.(expandedIdentity);
+                }
+                return true;
+            }
             illustratedGroupSignature = signature;
             const coverOffset = readerPages[0]?.type === "cover" ? 1 : 0;
             window.KobaIllustratedPages.maintainActiveWindow(readerPages, -10, "#111111");
@@ -2175,8 +2217,12 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             currentIndex = activeProgress
                 ? coverOffset + window.KobaIllustratedPages.locateProgress(rebuilt, activeProgress)
                 : 0;
+            activeIllustratedPageIdentity = activeProgress;
             currentVisualPage = 0;
-            void renderPage();
+            void renderPage({
+                preferredIllustratedIdentity: activeProgress,
+                focusIdentity: expandedIdentity ? activeProgress : null,
+            });
             return true;
         }
         window.addEventListener("resize", () => {
@@ -2231,8 +2277,11 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                     currentIndex = savedProgress?.chapterId && savedProgress?.pageId
                         ? coverOffset + window.KobaIllustratedPages.locateProgress(illustratedPages, savedProgress)
                         : 0;
+                    activeIllustratedPageIdentity = savedProgress?.chapterId && savedProgress?.pageId
+                        ? savedProgress
+                        : null;
                     currentVisualPage = 0;
-                    renderPage();
+                    renderPage({ preferredIllustratedIdentity: activeIllustratedPageIdentity });
                     resetHUDTimeout();
                     if (typeof window.revealMediaCanvas === "function") window.revealMediaCanvas();
                     return;
