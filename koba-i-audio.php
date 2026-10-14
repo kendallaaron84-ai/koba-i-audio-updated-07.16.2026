@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: KOBA-I Audio - Jubilee Edition
- * Version: 6.2.0
- * Description: Version 6.2.0: Isolated illustrated-page presentation plus illustrated reflowable EPUB support.
+ * Version: 6.2.1
+ * Description: Version 6.2.1: Reader Settings isolation and accessible illustrated-page zoom/pan.
  * Author: Kendall Aaron
  * Text Domain: Jubilee Works
  */
@@ -26,7 +26,7 @@ if ( class_exists( 'KobaAudioUpdater' ) ) {
 }
 
 // 1. CONSTANTS
-define( 'KOBA_IA_VERSION', '6.2.0' );
+define( 'KOBA_IA_VERSION', '6.2.1' );
 define( 'KOBA_IA_PATH', plugin_dir_path( __FILE__ ) );
 define( 'KOBA_IA_URL', plugin_dir_url( __FILE__ ) );
 

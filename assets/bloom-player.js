@@ -1,10 +1,10 @@
 /**
  * KOBA-I UNIVERSAL PLAYER
- * Version 6.2.0 - Illustrated Pages, Illustrated EPUB, Mobile Lock Screen, Media Session API & Fullscreen
+ * Version 6.2.1 - Reader Settings Isolation, Illustration Zoom/Pan, Illustrated Pages & EPUB
  */
 
 (function() {
-    const PLAYER_BUILD = '6.2.0-illustrated-pages';
+    const PLAYER_BUILD = '6.2.1-reader-ux';
     const RESUME_VERSION = 1;
     const RESUME_PREFIX = 'koba_bloom_resume_v1';
     const RESUME_THROTTLE_MS = 5000;
