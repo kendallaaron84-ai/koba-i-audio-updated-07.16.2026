@@ -829,6 +829,11 @@ function koba_render_bloom_player_shortcode(
     return ob_get_clean();
 }
 
+add_shortcode(
+    'koba_bloom_player',
+    'koba_render_bloom_player_shortcode'
+);
+
 function render_jubilee_matrix_buyer_catalog($atts) {
     $args = shortcode_atts(array('author' => '', 'type' => '', 'scope' => 'tenant'), $atts);
     $studio_key = sanitize_text_field(

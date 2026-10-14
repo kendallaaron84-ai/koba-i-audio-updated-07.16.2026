@@ -91,6 +91,10 @@ test("canonical reader handoff coexists with shortcode, activation, catalog, aud
   assert.match(core, /\/reader\/free\?assetId=/);
   assert.match(php, /add_shortcode\('jubilee_catalog'/);
   assert.match(php, /function koba_render_bloom_player_shortcode/);
+  assert.match(
+    php,
+    /add_shortcode\(\s*'koba_bloom_player',\s*'koba_render_bloom_player_shortcode'\s*\);/
+  );
   assert.match(php, /function koba_handle_license_submit/);
   assert.match(php, /koba_render_bloom_player_ui/);
   assert.match(php, /koba_render_sovereign_reader_engine/);
