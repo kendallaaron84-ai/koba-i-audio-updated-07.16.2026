@@ -12,4 +12,7 @@ test("free storefront actions use the central human-verification page while paid
   assert.match(source, /startListenerPurchase/);
   assert.match(source, /\/api\/checkout\/listener-session/);
   assert.match(source, /error\.canonicalHandoff = true/);
+  assert.match(source, /"Read Free"/);
+  assert.match(source, /"Listen Free"/);
+  assert.match(source, /hasOwnProperty\.call\(item, "price"\)/);
 });

@@ -4,7 +4,9 @@
   "use strict";
 
   const immersiveCanvasNode = document.getElementById("jubilee-bloom-root");
-  const catalogShelfNode = document.getElementById("jubilee-catalog-root");
+  const catalogShelfNodes = typeof document.querySelectorAll === "function"
+    ? Array.from(document.querySelectorAll(".jubilee-catalog-root, #jubilee-catalog-root"))
+    : [document.getElementById("jubilee-catalog-root")].filter(Boolean);
   const config = typeof JubileeConfig !== "undefined" ? JubileeConfig : {};
   const baseDashboardUrl = String(config.dashboardUrl || "http://localhost:3000").replace(/\/$/, "");
   const READER_SESSION_STORAGE_KEY = "koba_reader_session";
@@ -30,13 +32,16 @@
     }).catch((error) => {
       showImmersiveError(error instanceof Error ? error.message : "Unable to open this publication.");
     });
-  } else if (catalogShelfNode) {
-    const studioKey =
-      catalogShelfNode.getAttribute("data-studio-key") ||
-      String(config.studioKey || "");
-    const productType = catalogShelfNode.getAttribute("data-type") || "";
-    const catalogScope = catalogShelfNode.getAttribute("data-scope") === "global" ? "global" : "tenant";
-    const render = () => renderAuthorLibrary(studioKey, productType, catalogScope, catalogShelfNode);
+  } else if (catalogShelfNodes.length) {
+    const render = () => catalogShelfNodes.forEach((catalogShelfNode) => {
+      const studioKey =
+        catalogShelfNode.getAttribute("data-studio-key") ||
+        String(config.studioKey || "");
+      const productType = catalogShelfNode.getAttribute("data-type") || "";
+      const catalogScope = catalogShelfNode.getAttribute("data-scope") === "global" ? "global" : "tenant";
+      const catalogSection = catalogShelfNode.getAttribute("data-section") || "all";
+      renderAuthorLibrary(studioKey, productType, catalogScope, catalogSection, catalogShelfNode);
+    });
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", render, { once: true });
     } else {
@@ -266,7 +271,7 @@
     window.initKobaBloomPlayer(playerRoot, window.kobaData, "full");
   }
 
-  async function renderAuthorLibrary(_studioKey, productType, catalogScope, container) {
+  async function renderAuthorLibrary(_studioKey, productType, catalogScope, catalogSection, container) {
     if (!config.apiUrl) return renderCatalogError(container, "The catalog service is not configured.");
     try {
       const targetUrl = new URL(config.apiUrl);
@@ -276,7 +281,7 @@
       if (!Array.isArray(result.products) || result.products.length === 0) {
         return renderCatalogError(container, "No publications are available yet.");
       }
-      buildCatalogGridUI(container, result.products);
+      buildCatalogGridUI(container, result.products, catalogSection);
     } catch (error) {
       renderCatalogError(container, error instanceof Error ? error.message : "Unable to load the catalog.");
     }
@@ -341,6 +346,44 @@
     return "publication";
   }
 
+  function explicitCatalogPrice(item) {
+    const hasPrice = Object.prototype.hasOwnProperty.call(item, "price");
+    const hasUnitPrice = Object.prototype.hasOwnProperty.call(item, "unitPrice");
+    if (!hasPrice && !hasUnitPrice) return null;
+    const raw = hasPrice ? item.price : item.unitPrice;
+    if (raw === null || raw === undefined || raw === "") return null;
+    const numeric = typeof raw === "number" ? raw : Number(raw);
+    return Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
+  }
+
+  function catalogFormats(item) {
+    const declared = Array.isArray(item.formats)
+      ? item.formats.filter((value) => typeof value === "string" && value.trim()).map((value) => value.trim())
+      : [];
+    if (declared.length) return declared;
+    const type = normalizeCatalogType(item);
+    if (type === "ebook") return ["E-book"];
+    if (type === "audiobook") return ["Audiobook"];
+    return ["Publication"];
+  }
+
+  function supportsCatalogFormat(item, family) {
+    const values = catalogFormats(item).map((value) => value.toLowerCase().replace(/[\s_-]+/g, ""));
+    const written = values.some((value) => /ebook|written|text|illustrated/.test(value));
+    const spoken = values.some((value) => /audio|audiobook|spoken|narrat/.test(value));
+    return family === "written" ? written : spoken;
+  }
+
+  function filterCatalogProducts(productsList, catalogSection) {
+    return productsList.filter((item) => {
+      const price = explicitCatalogPrice(item);
+      if (catalogSection === "paid") return price !== null && price > 0;
+      if (catalogSection === "written-free") return price === 0 && supportsCatalogFormat(item, "written");
+      if (catalogSection === "spoken-free") return price === 0 && supportsCatalogFormat(item, "spoken");
+      return price !== null;
+    });
+  }
+
   function groupCatalogProducts(productsList) {
     const definitions = [
       { key: "audiobook", label: "Audiobooks" },
@@ -354,22 +397,37 @@
       .filter((group) => group.products.length > 0);
   }
 
-  function buildCatalogGridUI(container, productsList) {
+  function buildCatalogGridUI(container, productsList, catalogSection = "all") {
     container.innerHTML = "";
+    const filteredProducts = filterCatalogProducts(productsList, catalogSection);
+    if (!filteredProducts.length) {
+      const emptyMessage = catalogSection === "written-free"
+        ? "Free written works will appear here when they are available."
+        : catalogSection === "spoken-free"
+          ? "Free spoken-word works will appear here when they are available."
+          : "No publications are available in this collection yet.";
+      return renderCatalogError(container, emptyMessage);
+    }
     const sectionBlock = document.createElement("div");
     sectionBlock.className = "jubilee-catalog-groups";
     sectionBlock.style.width = "100%";
-    sectionBlock.innerHTML = groupCatalogProducts(productsList).map((group) => `
-      <section class="jubilee-catalog-group" data-koba-catalog-group="${group.key}" aria-labelledby="koba-catalog-${group.key}">
-        <h3 id="koba-catalog-${group.key}" class="jubilee-catalog-group-title">${group.label}</h3>
+    sectionBlock.innerHTML = groupCatalogProducts(filteredProducts).map((group) => {
+      const headingId = `${container.id || "koba-catalog"}-${group.key}`;
+      return `
+      <section class="jubilee-catalog-group" data-koba-catalog-group="${group.key}" aria-labelledby="${escapeHtml(headingId)}">
+        <h3 id="${escapeHtml(headingId)}" class="jubilee-catalog-group-title">${group.label}</h3>
         <div class="jubilee-bookshelf-track">
         ${group.products.map((item) => {
           const assetKey = String(item.assetKey || item.id || "");
-          const numericPrice = Number(item.price ?? item.unitPrice ?? 0);
-          const isPaid = Number.isFinite(numericPrice) && numericPrice > 0;
-          const productType = String(item.type || "").toLowerCase();
-          const openLabel = productType === "ebook" ? "Open Book" : "Listen Now";
+          const numericPrice = explicitCatalogPrice(item);
+          const isPaid = numericPrice !== null && numericPrice > 0;
+          const openLabel = catalogSection === "written-free"
+            ? "Read Free"
+            : catalogSection === "spoken-free"
+              ? "Listen Free"
+              : normalizeCatalogType(item) === "ebook" ? "Open Book" : "Listen Now";
           const priceLabel = isPaid ? `$${numericPrice.toFixed(2)}` : "Free";
+          const formatLabel = catalogFormats(item).join(" · ");
           const synopsis = String(
             item.synopsis || item.description || item.summary || item.excerpt ||
             "A synopsis has not been added for this publication yet."
@@ -386,6 +444,7 @@
                 <section class="jubilee-card-face jubilee-card-front">
                   <img class="jubilee-card-cover" src="${escapeHtml(item.coverUrl || item.coverArtUrl || "")}" alt="${escapeHtml(item.title || "Publication cover")}" />
                   <h4 class="jubilee-card-title">${escapeHtml(item.title || "Untitled")}</h4>
+                  <div class="jubilee-product-format">${escapeHtml(formatLabel)}</div>
                   <div class="jubilee-product-price" data-product-price="${numericPrice}">${priceLabel}</div>
                   <div class="jubilee-card-primary" data-koba-card-actions>${primaryAction}</div>
                   ${recoveryLink}
@@ -401,7 +460,8 @@
             </article>`;
         }).join("")}
         </div>
-      </section>`).join("");
+      </section>`;
+    }).join("");
     let pointerStart = null;
     let suppressCardFlip = false;
     sectionBlock.addEventListener("pointerdown", (event) => {

@@ -835,7 +835,14 @@ add_shortcode(
 );
 
 function render_jubilee_matrix_buyer_catalog($atts) {
-    $args = shortcode_atts(array('author' => '', 'type' => '', 'scope' => 'tenant'), $atts);
+    $args = shortcode_atts(array('author' => '', 'type' => '', 'scope' => 'tenant', 'section' => 'all'), $atts);
+    $allowed_sections = array('all', 'paid', 'written-free', 'spoken-free');
+    $catalog_section = sanitize_key($args['section']);
+    if (!in_array($catalog_section, $allowed_sections, true)) {
+        $catalog_section = 'all';
+    }
+    static $catalog_instance = 0;
+    $catalog_instance++;
     $studio_key = sanitize_text_field(
         get_option('koba_license_key', '')
     );
@@ -845,16 +852,18 @@ function render_jubilee_matrix_buyer_catalog($atts) {
     }
     
     return sprintf(
-        '<div id="jubilee-catalog-root" data-author="%s" data-studio-key="%s" data-type="%s" data-scope="%s" class="jubilee-matrix-loading">
+        '<div id="jubilee-catalog-root-%d" data-author="%s" data-studio-key="%s" data-type="%s" data-scope="%s" data-section="%s" class="jubilee-catalog-root jubilee-matrix-loading">
             <div class="jubilee-spinner-wrapper" style="text-align:center; padding: 40px 0;">
                 <div class="jubilee-spinner" style="display:inline-block; width:40px; height:40px; border:4px solid #333; border-top-color:#f97316; border-radius:50%%; animation: jSpin 1s linear infinite;"></div>
             </div>
          </div>
          <style>@keyframes jSpin { to { transform: rotate(360deg); } }</style>',
+        $catalog_instance,
         esc_attr($args['author']),
         esc_attr($studio_key),
         esc_attr($args['type']),
-        esc_attr($args['scope'] === 'global' ? 'global' : 'tenant')
+        esc_attr($args['scope'] === 'global' ? 'global' : 'tenant'),
+        esc_attr($catalog_section)
     );
 }
 
@@ -869,6 +878,7 @@ function koba_render_window_shortcode($atts = array()) {
             'author' => '',
             'type'   => '',
             'scope'  => 'tenant',
+            'section' => 'all',
         ),
         $atts,
         'koba_window'
@@ -883,6 +893,7 @@ function koba_render_window_shortcode($atts = array()) {
                 $atts['type']
             ),
             'scope' => sanitize_key($atts['scope']),
+            'section' => sanitize_key($atts['section']),
         )
     );
 }

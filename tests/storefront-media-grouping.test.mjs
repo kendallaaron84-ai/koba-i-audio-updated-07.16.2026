@@ -9,7 +9,7 @@ async function loadGroupingFunctions() {
   const start = core.indexOf("function normalizeCatalogType");
   const end = core.indexOf("function buildCatalogGridUI");
   assert.ok(start >= 0 && end > start, "catalog grouping functions must remain testable");
-  return Function(`${core.slice(start, end)}; return { normalizeCatalogType, groupCatalogProducts };`)();
+  return Function(`${core.slice(start, end)}; return { normalizeCatalogType, groupCatalogProducts, explicitCatalogPrice, catalogFormats, supportsCatalogFormat, filterCatalogProducts };`)();
 }
 
 test("audiobooks and e-books render into independent storefront rows", async () => {
@@ -28,6 +28,20 @@ test("audiobooks and e-books render into independent storefront rows", async () 
   assert.deepEqual(groups[1].products.map((product) => product.assetKey), ["ebk_ebook-one"]);
 });
 
+test("catalog sections require explicit prices and share one canonical product list", async () => {
+  const { filterCatalogProducts } = await loadGroupingFunctions();
+  const products = [
+    { assetKey: "ebk_paid", price: 12, formats: ["Illustrated ebook"] },
+    { assetKey: "ebk_free", price: 0, formats: ["Written"] },
+    { assetKey: "abk_free", unitPrice: "0.00", formats: ["Audiobook"] },
+    { assetKey: "bundle_free", price: 0, formats: ["E-book", "Audiobook"] },
+    { assetKey: "missing", formats: ["E-book"] },
+  ];
+  assert.deepEqual(filterCatalogProducts(products, "paid").map((item) => item.assetKey), ["ebk_paid"]);
+  assert.deepEqual(filterCatalogProducts(products, "written-free").map((item) => item.assetKey), ["ebk_free", "bundle_free"]);
+  assert.deepEqual(filterCatalogProducts(products, "spoken-free").map((item) => item.assetKey), ["abk_free", "bundle_free"]);
+});
+
 test("unknown publication taxonomy is isolated instead of merged into a book row", async () => {
   const { groupCatalogProducts, normalizeCatalogType } = await loadGroupingFunctions();
   const groups = groupCatalogProducts([
@@ -44,6 +58,6 @@ test("grouping remains downstream of the authenticated tenant-scoped catalog req
   const core = await readFile(new URL("assets/jubilee-core.js", root), "utf8");
   const render = core.slice(core.indexOf("async function renderAuthorLibrary"), core.indexOf("function renderCatalogError"));
   assert.match(render, /requestJson\(targetUrl\.toString\(\)\)/);
-  assert.match(render, /buildCatalogGridUI\(container, result\.products\)/);
+  assert.match(render, /buildCatalogGridUI\(container, result\.products, catalogSection\)/);
   assert.doesNotMatch(render, /X-Studio-Key|searchParams\.set\("author"/);
 });
