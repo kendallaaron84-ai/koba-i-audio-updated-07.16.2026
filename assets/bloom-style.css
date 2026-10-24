@@ -1582,6 +1582,7 @@ body.single-koba_publication #left-area { width: 100% !important; max-width: 100
 
     .k-buttons {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         grid-template-rows: auto auto;
         gap: 5px;
         padding: 5px 8px calc(5px + var(--k-safe-bottom));
@@ -1590,13 +1591,20 @@ body.single-koba_publication #left-area { width: 100% !important; max-width: 100
 
     .k-primary-transport,
     .k-actions {
+        display: grid;
         width: 100%;
         min-width: 0;
-        justify-content: space-evenly;
-        gap: 2px;
+        align-items: center;
+        justify-items: center;
+        gap: clamp(2px, 1.5vw, 8px);
+    }
+
+    .k-primary-transport {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 
     .k-actions {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         margin: 0;
         padding: 3px 0 0;
         border-top: 1px solid rgba(255,255,255,0.1);
