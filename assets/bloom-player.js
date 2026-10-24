@@ -4,7 +4,7 @@
  */
 
 (function() {
-    const PLAYER_BUILD = '6.2.1-reader-ux';
+    const PLAYER_BUILD = '6.2.2-mobile-controls';
     const RESUME_VERSION = 1;
     const RESUME_PREFIX = 'koba_bloom_resume_v1';
     const RESUME_THROTTLE_MS = 5000;
