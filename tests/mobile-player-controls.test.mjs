@@ -53,3 +53,11 @@ test("desktop controls retain their established single-row composition", async (
 
   assert.match(desktop, /\.k-primary-transport,\s*\.k-actions\s*\{\s*display:\s*contents;/);
 });
+
+test("transcript auto-scroll advances once per active word without queued smooth-scroll lag", async () => {
+  const { player } = await mobilePlayerSources();
+  assert.match(player, /let activeTranscriptWord = null;/);
+  assert.match(player, /if\(activeWord !== activeTranscriptWord\)\s*\{\s*activeTranscriptWord = activeWord;/);
+  assert.match(player, /scrollIntoView\(\{behavior: "auto", block: "center", inline: "nearest"\}\)/);
+  assert.doesNotMatch(player, /activeWord\.scrollIntoView\(\{behavior: "smooth"/);
+});

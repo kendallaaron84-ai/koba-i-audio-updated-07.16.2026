@@ -240,6 +240,7 @@
         let isPlaying = false;
         let mediaEl = null; 
         let transcriptData = null;
+        let activeTranscriptWord = null;
         let chapterLoadSequence = 0;
         let suppressResumeSave = false;
 
@@ -814,6 +815,7 @@
         function loadTranscript(chap) {
             if(!textBtn) return;
             transcriptData = null;
+            activeTranscriptWord = null;
             textBtn.style.opacity = '0.3';
             textBtn.style.cursor = 'default';
             
@@ -870,8 +872,11 @@
                     w.classList.remove('active');
                 }
             });
-            if(activeWord) {
-                activeWord.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
+            if(activeWord !== activeTranscriptWord) {
+                activeTranscriptWord = activeWord;
+                if(activeWord) {
+                    activeWord.scrollIntoView({behavior: "auto", block: "center", inline: "nearest"});
+                }
             }
         }
 
