@@ -2654,6 +2654,17 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 /* =========================================================================
     🛡️ CANVAS INTERCEPT FILTER: CONTRACT RECONCILIATION GATE
 ========================================================================= */
+// Publication availability can change on Save & Sync; never retain its reader shell.
+function koba_prevent_shared_reader_cache() {
+    if ( ! is_singular( array( 'page', 'koba_publication' ) ) ) return;
+    $id = get_queried_object_id();
+    $bookshelf_asset = is_page( 'bookshelf' ) && isset( $_GET['asset'] ) && is_string( $_GET['asset'] ) && trim( $_GET['asset'] ) !== '';
+    if ( ! is_singular( 'koba_publication' ) && ! get_post_meta( $id, 'assetKey', true ) && ! get_post_meta( $id, 'koba_asset_key', true ) && ! $bookshelf_asset ) return;
+    nocache_headers();
+    header( 'Cache-Control: private, no-store, max-age=0' );
+}
+add_action( 'template_redirect', 'koba_prevent_shared_reader_cache', 0 );
+
 add_filter('template_include', 'koba_enforce_clean_application_canvas', 999);
 function koba_enforce_clean_application_canvas($template) {
     global $post;

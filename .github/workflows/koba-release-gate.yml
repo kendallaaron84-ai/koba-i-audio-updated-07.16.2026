@@ -46,6 +46,8 @@ jobs:
         run: php tests/editor-audio-preview.php
       - name: Validate isolated acceptance containment
         run: php tests/acceptance-containment.php
+      - name: Validate reader cache boundary
+        run: php tests/reader-cache-boundary.php
 
   illustrated-reader:
     name: Packaged reader browser acceptance
