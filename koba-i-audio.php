@@ -1501,6 +1501,11 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
 
         async function requestAuthorizedPublication() {
             if (root.dataset.editorPreview === "true") {
+                // Private data is inline and resolves before footer dependencies load.
+                // Wait for WordPress's existing illustrated engine before rendering it.
+                if (document.readyState === "loading") {
+                    await new Promise(resolve => document.addEventListener("DOMContentLoaded", resolve, { once: true }));
+                }
                 const preview = document.getElementById("koba-editor-preview-data");
                 if (!preview) throw new Error("Private editorial preview is unavailable.");
                 return JSON.parse(preview.textContent);
