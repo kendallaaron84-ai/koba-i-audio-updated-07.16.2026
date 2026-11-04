@@ -1076,6 +1076,7 @@ function koba_render_bloom_player_ui($book_id, $asset_key = '') {
     if (empty($asset_key) && !empty($book_id)) {
         $asset_key = get_post_meta($book_id, 'koba_asset_key', true) ?: get_post_meta($book_id, 'assetKey', true) ?: '';
     }
+    $editor_preview_book = koba_editor_preview_book( $book_id, $asset_key );
     $dashboard_url = koba_get_dashboard_url();
     $studio_key = get_option('koba_license_key', '');
     $is_paid_publication = ((float) get_post_meta($book_id, '_koba_price', true)) > 0;
@@ -1086,12 +1087,16 @@ function koba_render_bloom_player_ui($book_id, $asset_key = '') {
         data-asset="<?php echo esc_attr($asset_key); ?>" 
         data-post-id="<?php echo esc_attr($book_id); ?>"
         data-studio-key="<?php echo esc_attr($studio_key); ?>"
+        data-editor-preview="<?php echo $editor_preview_book ? 'true' : 'false'; ?>"
         data-paid-publication="<?php echo $is_paid_publication ? 'true' : 'false'; ?>"
         data-api="<?php echo esc_url(rest_url('kobai/v1/storefront-catalog')); ?>"
         style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"
     >
         <div id="koba-bloom-root" style="width:100%; height:100%;"></div>
     </div>
+    <?php if ( $editor_preview_book ) : ?>
+    <script type="application/json" id="koba-editor-preview-data"><?php echo wp_json_encode( array( 'success' => true, 'products' => array( $editor_preview_book ) ), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?></script>
+    <?php endif; ?>
     <?php
 }
 

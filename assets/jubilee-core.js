@@ -19,6 +19,22 @@
     const paidPublication = immersiveCanvasNode.getAttribute("data-paid-publication") === "true";
     if (!assetKey) return;
 
+    if (immersiveCanvasNode.getAttribute("data-editor-preview") === "true") {
+      const openEditorialAudio = () => {
+        try {
+          const data = JSON.parse(document.getElementById("koba-editor-preview-data")?.textContent || "null");
+          const book = data?.success === true && Array.isArray(data.products)
+            ? data.products.find(item => item.assetKey === assetKey && item.studioKey === studioKey && item.mediaType === "audiobook") : null;
+          if (!book) throw new Error("Private audiobook preview is unavailable.");
+          bootBloomPlayerWithData(book);
+        } catch {
+          immersiveCanvasNode.textContent = "Private audiobook preview is unavailable. Save and sync your draft again.";
+        }
+      };
+      // The existing Bloom initializer is a later footer dependency.
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", openEditorialAudio, { once: true });
+      else openEditorialAudio();
+    } else {
     const handoffReady = window.KobaReaderHandoff ? window.KobaReaderHandoff.ready : Promise.resolve(null);
     handoffReady.then(() => {
       const canonicalSession = window.KobaReaderHandoff
@@ -32,6 +48,7 @@
     }).catch((error) => {
       showImmersiveError(error instanceof Error ? error.message : "Unable to open this publication.");
     });
+    }
   } else if (catalogShelfNodes.length) {
     const render = () => catalogShelfNodes.forEach((catalogShelfNode) => {
       const studioKey =

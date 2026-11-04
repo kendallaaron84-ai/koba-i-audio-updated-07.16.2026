@@ -42,6 +42,8 @@ jobs:
         run: node --test tests/*.test.mjs
       - name: Run gateway authorization negatives
         run: php tests/gateway-security.php
+      - name: Run private audio authorization and range regressions
+        run: php tests/editor-audio-preview.php
 
   illustrated-reader:
     name: Packaged reader browser acceptance
