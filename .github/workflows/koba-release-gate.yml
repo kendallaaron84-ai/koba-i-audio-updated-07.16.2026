@@ -44,6 +44,8 @@ jobs:
         run: php tests/gateway-security.php
       - name: Run private audio authorization and range regressions
         run: php tests/editor-audio-preview.php
+      - name: Validate isolated acceptance containment
+        run: php tests/acceptance-containment.php
 
   illustrated-reader:
     name: Packaged reader browser acceptance
