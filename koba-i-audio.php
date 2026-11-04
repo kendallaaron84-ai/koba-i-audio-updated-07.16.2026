@@ -213,12 +213,12 @@ add_action('rest_api_init', function () {
     ]);
     register_rest_route('kobai/v1', '/publish-vault', [
         'methods'             => 'POST',
-        'callback'            => 'koba_agent_create_vault_page',
+        'callback'            => 'koba_gateway_write_publication',
         'permission_callback' => 'koba_authorize_gateway_publication_write'
     ]);
     register_rest_route('kobai/v1', '/update-chapter-audio', [
         'methods'             => 'POST',
-        'callback'            => 'koba_agent_create_vault_page',
+        'callback'            => 'koba_gateway_write_publication',
         'permission_callback' => 'koba_authorize_gateway_publication_write'
     ]);
 });

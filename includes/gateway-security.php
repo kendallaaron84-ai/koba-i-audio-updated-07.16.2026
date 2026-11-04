@@ -83,6 +83,27 @@ function koba_authorize_gateway_publication_write( $request ) {
 
     $params = $request->get_json_params();
     $params = is_array( $params ) ? $params : array();
+    $incoming_studio_key = isset( $params['studioKey'] ) && is_string( $params['studioKey'] )
+        ? strtoupper( trim( $params['studioKey'] ) )
+        : '';
+    $licensed_studio_key = strtoupper( trim( (string) get_option( 'koba_license_key' ) ) );
+    if ( ! $incoming_studio_key || ! hash_equals( $licensed_studio_key, $incoming_studio_key ) ) {
+        return koba_gateway_permission_error(
+            'koba_gateway_studio_key_mismatch',
+            'The publication workspace does not match this WordPress installation.',
+            403
+        );
+    }
+    $incoming_origin = isset( $params['targetWpOrigin'] ) && is_string( $params['targetWpOrigin'] )
+        ? koba_normalize_gateway_site_origin( $params['targetWpOrigin'] )
+        : '';
+    if ( ! $incoming_origin || $incoming_origin !== $current_origin ) {
+        return koba_gateway_permission_error(
+            'koba_gateway_destination_mismatch',
+            'The publication destination does not match this WordPress installation.',
+            403
+        );
+    }
     // Match the write handler's legacy default exactly. Omitting status must
     // never let an edit-only account create a published record.
     $status = sanitize_key( $params['status'] ?? 'published' );
@@ -111,6 +132,38 @@ function koba_authorize_gateway_publication_write( $request ) {
     }
 
     return true;
+}
+
+/** Serialize retries across both REST routes before resolving or creating posts. */
+function koba_gateway_write_publication( $request ) {
+    global $wpdb;
+    $params = $request->get_json_params();
+    $params = is_array( $params ) ? $params : array();
+    $asset_key = sanitize_text_field( $params['assetKey'] ?? ( $params['asset_key'] ?? '' ) );
+    if ( $asset_key === '' ) {
+        return new WP_Error( 'missing_data', 'Missing assetKey identifier.', array( 'status' => 400 ) );
+    }
+    // INSERT IGNORE acquires the unique option_name only once, without the
+    // add_option upsert or object-cache races. Never steal a timed-out lock.
+    $lock_name = 'koba_publication_write_' . hash( 'sha256', $asset_key );
+    $lock_token = wp_generate_uuid4();
+    $acquired = $wpdb->query( $wpdb->prepare(
+        "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'off')",
+        $lock_name, $lock_token
+    ) );
+    if ( $acquired !== 1 ) {
+        return new WP_Error( 'koba_publication_busy',
+            'This publication is already synchronizing. Retry after the current request completes.',
+            array( 'status' => 409 ) );
+    }
+    try {
+        return koba_agent_create_vault_page( $request );
+    } finally {
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s",
+            $lock_name, $lock_token
+        ) );
+    }
 }
 
 function koba_find_publication_post_by_asset_key( $asset_key, $post_type ) {
