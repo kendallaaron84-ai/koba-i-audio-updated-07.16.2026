@@ -541,6 +541,10 @@ add_action('admin_notices', function() {
 });
 
 function koba_proxy_storefront_catalog($request) {
+    // Publication and draft transitions must be checked against the current catalog.
+    // Shared HTTP caches must never retain a previously published listing.
+    nocache_headers();
+    header('Cache-Control: private, no-store, max-age=0');
     $token = sanitize_text_field(get_option('koba_storefront_site_token', ''));
     $identity_refreshed = false;
     if ($token === '') {
