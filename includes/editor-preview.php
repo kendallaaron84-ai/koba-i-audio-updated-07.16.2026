@@ -163,7 +163,7 @@ function koba_editor_preview_audio_range( $value, $size ) {
     $end = $size - 1;
     if ( $size <= 0 ) return new WP_Error( 'koba_preview_audio_range', 'Audio range unavailable.', array( 'status' => 416 ) );
     if ( $value !== '' ) {
-        if ( ! preg_match( '/^bytes=(\d*)-(\d*)$/', $value, $match ) || ( $match[1] === '' && $match[2] === '' ) ) return new WP_Error( 'koba_preview_audio_range', 'Audio range unavailable.', array( 'status' => 416 ) );
+        if ( ! preg_match( '/^bytes=(\d*)-(\d*)$/i', $value, $match ) || ( $match[1] === '' && $match[2] === '' ) ) return new WP_Error( 'koba_preview_audio_range', 'Audio range unavailable.', array( 'status' => 416 ) );
         if ( $match[1] === '' ) {
             if ( (int) $match[2] <= 0 ) return new WP_Error( 'koba_preview_audio_range', 'Audio range unavailable.', array( 'status' => 416 ) );
             $start = max( 0, $size - (int) $match[2] );

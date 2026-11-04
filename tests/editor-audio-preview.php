@@ -48,7 +48,7 @@ $bad = $params; $bad['chapters'][0]['storagePath'] = 'studio/abk_other/KOBA-AUDI
 assert_error( koba_prepare_editor_preview_snapshot( $bad ), 'koba_preview_audio_invalid', 400 );
 $empty = $params; $empty['chapters'] = array( array( 'title' => 'Unuploaded draft' ) );
 if ( koba_prepare_editor_preview_snapshot( $empty )['chapters'] !== array() ) throw new RuntimeException( 'Empty draft could not stage safely.' );
-foreach ( array( array( '', 100, array(0,99) ), array( null,100,array(0,99) ), array( 'bytes=0-1',100,array(0,1) ), array( 'bytes=90-',100,array(90,99) ), array( 'bytes=-5',100,array(95,99) ), array( 'bytes=0-',10000000,array(0,4194303) ) ) as $case ) {
+foreach ( array( array( '', 100, array(0,99) ), array( null,100,array(0,99) ), array( 'bytes=0-1',100,array(0,1) ), array( 'Bytes=0-1',100,array(0,1) ), array( 'bytes=90-',100,array(90,99) ), array( 'bytes=-5',100,array(95,99) ), array( 'bytes=0-',10000000,array(0,4194303) ) ) as $case ) {
     if ( koba_editor_preview_audio_range( $case[0], $case[1] ) !== $case[2] ) throw new RuntimeException( 'Incorrect bounded audio range.' );
 }
 foreach ( array( 'bytes=100-', 'bytes=9-2', 'bytes=0-1,4-5', 'bytes=-0', 'bytes=-', 'garbage' ) as $value ) assert_error( koba_editor_preview_audio_range( $value, 100 ), 'koba_preview_audio_range', 416 );
