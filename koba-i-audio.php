@@ -2165,6 +2165,20 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
             const paginatedNode = activePaginatedNode();
             if (!paginatedNode || paginatedNode.dataset.paginationBound === "true") return;
             paginatedNode.dataset.paginationBound = "true";
+            // Private images arrive after the first layout; remeasure the existing
+            // reader so navigation cannot skip columns created by their load.
+            if (root.dataset.editorPreview === "true") {
+                paginatedNode.querySelectorAll("img").forEach(image => {
+                    image.style.maxWidth = "100%";
+                    image.style.maxHeight = "55dvh";
+                    image.style.objectFit = "contain";
+                    image.addEventListener("load", () => {
+                        if (activePaginatedNode() === paginatedNode) {
+                            measureActivePagination({ preserveContentAnchor: true });
+                        }
+                    }, { once: true });
+                });
+            }
             const settleToNearestPage = () => {
                 const pageWidth = Math.max(1, paginatedNode.clientWidth);
                 currentVisualPage = Math.min(
