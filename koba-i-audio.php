@@ -2665,6 +2665,20 @@ function koba_prevent_shared_reader_cache() {
 }
 add_action( 'template_redirect', 'koba_prevent_shared_reader_cache', 0 );
 
+function koba_prevent_shared_publication_rest_cache( $response, $server, $request ) {
+    unset( $server );
+    $route = $request->get_route();
+    $reader = preg_match( '~^/wp/v2/koba_publication(?:/|$)~', $route );
+    if ( preg_match( '~^/wp/v2/pages(?:/(?P<id>\d+))?/?$~', $route, $match ) ) {
+        $id = isset( $match['id'] ) ? (int) $match['id'] : 0;
+        // The mixed page collection also contains book reader entries.
+        $reader = $id === 0 || get_post_meta( $id, 'assetKey', true ) || get_post_meta( $id, 'koba_asset_key', true );
+    }
+    if ( $reader && is_object( $response ) && method_exists( $response, 'header' ) ) $response->header( 'Cache-Control', 'private, no-store, max-age=0' );
+    return $response;
+}
+add_filter( 'rest_post_dispatch', 'koba_prevent_shared_publication_rest_cache', 10, 3 );
+
 add_filter('template_include', 'koba_enforce_clean_application_canvas', 999);
 function koba_enforce_clean_application_canvas($template) {
     global $post;

@@ -25,4 +25,24 @@ foreach ( $cases as list( $name, $type, $slug, $meta, $query, $calls ) ) {
     if ( $GLOBALS['nocache_calls'] !== $calls ) throw new RuntimeException( 'Reader cache classification failed: ' . $name );
 }
 if ( strpos( $match[0], "header( 'Cache-Control: private, no-store, max-age=0' )" ) === false ) throw new RuntimeException( 'Shared-cache protection missing.' );
+if ( ! preg_match( '/function koba_prevent_shared_publication_rest_cache\(.*?^\}/ms', $source, $match ) ) throw new RuntimeException( 'Publication REST cache boundary missing.' );
+eval( $match[0] );
+class CacheTestResponse { public $headers = array(); function header( $name, $value ) { $this->headers[$name] = $value; } }
+class CacheTestRequest { function __construct( public $route ) {} function get_route() { return $this->route; } }
+foreach ( array(
+    array( '/wp/v2/koba_publication', array(), true ),
+    array( '/wp/v2/koba_publication/28', array(), true ),
+    array( '/wp/v2/pages', array(), true ),
+    array( '/wp/v2/pages/28', array( 'assetKey' => 'ebk_fixture' ), true ),
+    array( '/wp/v2/pages/28', array( 'koba_asset_key' => 'abk_fixture' ), true ),
+    array( '/wp/v2/pages/38', array(), false ),
+    array( '/wp/v2/pages/107', array(), false ),
+    array( '/wp/v2/users', array(), false ),
+    array( '/unrelated/v1/pages', array(), false ),
+) as list( $route, $meta, $protected ) ) {
+    $GLOBALS['meta'] = $meta; $response = new CacheTestResponse();
+    $result = koba_prevent_shared_publication_rest_cache( $response, null, new CacheTestRequest( $route ) );
+    if ( $result !== $response || isset( $response->headers['Cache-Control'] ) !== $protected ) throw new RuntimeException( 'REST cache classification failed: ' . $route );
+    if ( $protected && $response->headers['Cache-Control'] !== 'private, no-store, max-age=0' ) throw new RuntimeException( 'REST cache header missing.' );
+}
 echo "PASS: reader shells cannot enter shared caches; catalog and landing presentation untouched.\n";
