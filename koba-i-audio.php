@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * -----------------------------------------------------------------------------
  */
 require_once plugin_dir_path( __FILE__ ) . 'includes/updater.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/editor-preview.php';
 if ( class_exists( 'KobaAudioUpdater' ) ) {
     $updater = new KobaAudioUpdater( __FILE__ );
     $updater->set_username( 'koba-i' );
@@ -247,6 +248,8 @@ function koba_agent_create_vault_page($request) {
         );
     }
     $wordpress_post_status = $publication_status === 'published' ? 'publish' : 'draft';
+    $editor_preview_snapshot = koba_prepare_editor_preview_snapshot( $params );
+    if ( is_wp_error( $editor_preview_snapshot ) ) return $editor_preview_snapshot;
     
     if (empty($params['chapters'])) {
         if (!empty($params['studioTracks'])) {
@@ -316,6 +319,7 @@ function koba_agent_create_vault_page($request) {
     update_post_meta($pub_id, '_koba_media_type', $media_type);
     update_post_meta($pub_id, '_koba_price', $price);
     update_post_meta($pub_id, '_koba_publication_status', $publication_status);
+    if ( is_array( $editor_preview_snapshot ) ) update_post_meta( $pub_id, '_koba_editor_preview', $editor_preview_snapshot );
     
     if (!empty($ebook_data)) {
         update_post_meta($pub_id, '_koba_chapters_data', $ebook_data);
@@ -360,6 +364,7 @@ function koba_agent_create_vault_page($request) {
     update_post_meta($page_id, '_koba_media_type', $media_type);
     update_post_meta($page_id, '_koba_price', $price);
     update_post_meta($page_id, '_koba_publication_status', $publication_status);
+    if ( is_array( $editor_preview_snapshot ) ) update_post_meta( $page_id, '_koba_editor_preview', $editor_preview_snapshot );
     if (!empty($ebook_data)) {
         update_post_meta($page_id, '_koba_chapters_data', $ebook_data);
     }
@@ -1092,6 +1097,7 @@ function koba_render_bloom_player_ui($book_id, $asset_key = '') {
     📖 EBOOK BRANCH ENGINE: THE HIGH-PERFORMANCE GLASS READER
 ========================================================================= */
 function koba_render_sovereign_reader_engine($post_id, $asset_key) {
+    $editor_preview_book = koba_editor_preview_book( $post_id, $asset_key );
     // Use the same authoritative dashboard origin as the canonical handoff.
     // A separate legacy API constant can point the e-reader at a different
     // deployment/Firebase project even after the handoff succeeds.
@@ -1417,6 +1423,7 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
                 <div
                     id="koba-ebook-canvas-root"
                     data-asset="<?php echo esc_attr($asset_key); ?>"
+                    data-editor-preview="<?php echo $editor_preview_book ? 'true' : 'false'; ?>"
                     data-studio-key="<?php echo esc_attr(get_option('koba_license_key', '')); ?>"
                     data-paid-publication="<?php echo $is_paid_publication ? 'true' : 'false'; ?>"
                     data-api="<?php echo esc_url($base_api_url . '/api/media/manifest'); ?>"
@@ -1436,6 +1443,9 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         </div>
     </div>
 
+    <?php if ( $editor_preview_book ) : ?>
+    <script type="application/json" id="koba-editor-preview-data"><?php echo wp_json_encode( array( 'success' => true, 'products' => array( $editor_preview_book ) ), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?></script>
+    <?php endif; ?>
     <script>
     (function() {
         const root = document.querySelector("#koba-ebook-canvas-root");
@@ -1490,6 +1500,11 @@ function koba_render_sovereign_reader_engine($post_id, $asset_key) {
         }
 
         async function requestAuthorizedPublication() {
+            if (root.dataset.editorPreview === "true") {
+                const preview = document.getElementById("koba-editor-preview-data");
+                if (!preview) throw new Error("Private editorial preview is unavailable.");
+                return JSON.parse(preview.textContent);
+            }
             await waitForCanonicalHandoff();
             if (window.KobaReaderHandoff) await window.KobaReaderHandoff.ready;
             const canonicalSession = window.KobaReaderHandoff
