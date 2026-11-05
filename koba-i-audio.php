@@ -687,6 +687,14 @@ function koba_enforce_license_lock() {
     }
 }
 
+// Keep this versioned stylesheet fresh when SiteGround removes resource queries.
+add_filter('sgo_rqs_exclude', 'koba_preserve_catalog_style_version');
+function koba_preserve_catalog_style_version($excluded) {
+    $excluded[] = 'koba-i-audio/assets/bloom-style.css';
+    $excluded[] = 'koba-i-audio/assets/bloom-style.min.css';
+    return $excluded;
+}
+
 add_action(
     'wp_enqueue_scripts',
     'koba_load_vault_assets'
