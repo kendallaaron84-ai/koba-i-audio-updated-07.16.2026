@@ -65,6 +65,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run fixtures
       - run: npm test
+      - name: Validate shared portrait catalog and theme overrides
+        run: node catalog-portrait.browser.mjs
       - run: node illustrated-pages.browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
